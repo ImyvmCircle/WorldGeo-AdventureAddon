@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "adventure",
+	"version": "${version}",
+	"name": "WorldGeo-AdventureAddon",
+	"description": "An extension mod for ImyvmWorldGeo to provide adventure attribute features.",
+	"authors": [
+		"Doohaey Re"
+	],
+	"contact": {
+		"homepage": "https://github.com/ImyvmCircle",
+		"sources": "https://github.com/ImyvmCircle/WorldGeo-AdventureAddon"
+	},
+	"license": "GPL-3",
+	"icon": "assets/adventure/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "com.imyvm.adventure.WorldGeoAdventureAddon",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"adventure.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.5",
+		"minecraft": "26.1",
+		"java": ">=25",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}
