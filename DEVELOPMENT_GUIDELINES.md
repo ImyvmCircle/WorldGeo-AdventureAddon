@@ -15,4 +15,4 @@
 9. 本项目依赖`ImyvmWorldGeo`从Maven仓库拉取制品，相邻目录下的本地源码**不保证**与实际构建所使用的制品版本一致。实现调用`ImyvmWorldGeo` API的功能时，请对照**已发布制品**验证方法签名，不要将本地源文件视为规范的API参考。
 10. 测试要包含./gradlew runServer.
 11. 未说明清楚的机制、语言文件用名和感到机制模糊的地方等等应该向操作者提问。不要为了确认需求终止对话。
-12. 本项目跟IMYVMWorldGeo Core和CommunityAddon要高度协作，互相参考。
+12. 本项目跟IMYVMWorldGeo要高度协作，与WorldGeo-CommunityAddon互相参考。
