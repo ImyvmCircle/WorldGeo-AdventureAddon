@@ -9,6 +9,16 @@
   "command.about.finance": "&7Finance caps: &e{0}&7 transfers/settlement, &e{1}%&7 total exposure, &e{2}%&7 per project",
   "command.reload.success": "&aAdventure configuration reloaded.",
   "command.debug.context": "&7Runtime ready: &a{0}&7, server bound: &a{1}",
+  "command.admin.region.init.success": "&aAdventure region profile initialized: &eID={0}&7, name: &b{1}",
+  "command.admin.region.init.error.no_region": "&cYou are not standing in an IWG region, so no profile can be initialized here.",
+  "command.admin.region.init.error.not_found": "&cNo IWG region found for ID &e{0}&c.",
+  "command.admin.anchor.create.success": "&aAnchor registered: &e{0}&7 / &b{1}&7. Region: &e{2}&7, scope: &b{3}&7, pos: &e({4},{5},{6})",
+  "command.admin.anchor.create.error.exists": "&cAn anchor is already registered here: &e{0}&7 at &e({1},{2},{3})",
+  "command.admin.anchor.create.error.no_region": "&cThe position &e({0},{1},{2})&c is outside any IWG region, so the anchor cannot be registered.",
+  "command.admin.anchor.info.success": "&6Anchor&r: id=&e{0}&7, kind=&e{1}&7, title=&b{2}&7, regionId=&e{3}&7, region=&e{4}&7, scope=&b{5}&7, enabled=&a{6}&7, pos=&e({7},{8},{9})",
+  "command.admin.anchor.info.error.not_found": "&cNo Adventure anchor is registered at &e({0},{1},{2})&c.",
+  "command.admin.anchor.remove.success": "&aAnchor removed: &e{0}&7 / &b{1}&7 at &e({2},{3},{4})",
+  "command.admin.anchor.remove.error.not_found": "&cNo Adventure anchor is registered at &e({0},{1},{2})&c.",
   "interaction.anchor.open": "&6&l[{0}]&r &aAdventure anchor recognized. &7Region: &e{1}&7, scope: &b{2}",
   "interaction.anchor.region_mismatch": "&cAnchor &e{0}&c is registered to a different region. &7Current region: &e{1}"
 }

@@ -9,6 +9,16 @@
   "command.about.finance": "&7金融限制：单结算期转让 &e{0} 次&7，总在险资本 &e{1}%&7，单项目上限 &e{2}%",
   "command.reload.success": "&aAdventure 配置已重载。",
   "command.debug.context": "&7运行时已就绪：&a{0}&7，服务器已绑定：&a{1}",
+  "command.admin.region.init.success": "&a已初始化 Adventure 区域档案：&eID={0}&7，名称：&b{1}",
+  "command.admin.region.init.error.no_region": "&c当前位置不在任何 IWG 境界中，无法初始化区域档案。",
+  "command.admin.region.init.error.not_found": "&c未找到 ID 为 &e{0}&c 的 IWG 境界。",
+  "command.admin.anchor.create.success": "&a已登记锚点：&e{0}&7 / &b{1}&7。境界：&e{2}&7，地方：&b{3}&7，坐标：&e({4},{5},{6})",
+  "command.admin.anchor.create.error.exists": "&c该位置已有锚点：&e{0}&7，坐标：&e({1},{2},{3})",
+  "command.admin.anchor.create.error.no_region": "&c坐标 &e({0},{1},{2})&c 不在任何 IWG 境界内，无法登记锚点。",
+  "command.admin.anchor.info.success": "&6锚点信息&r：ID=&e{0}&7，类型=&e{1}&7，标题=&b{2}&7，区域ID=&e{3}&7，区域=&e{4}&7，地方=&b{5}&7，启用=&a{6}&7，坐标=&e({7},{8},{9})",
+  "command.admin.anchor.info.error.not_found": "&c坐标 &e({0},{1},{2})&c 未登记 Adventure 锚点。",
+  "command.admin.anchor.remove.success": "&a已移除锚点：&e{0}&7 / &b{1}&7，坐标：&e({2},{3},{4})",
+  "command.admin.anchor.remove.error.not_found": "&c坐标 &e({0},{1},{2})&c 未登记 Adventure 锚点。",
   "interaction.anchor.open": "&6&l[{0}]&r &a已识别 Adventure 锚点。&7境界：&e{1}&7，地方：&b{2}",
   "interaction.anchor.region_mismatch": "&c锚点 &e{0}&c 的登记区域与当前位置不符。&7当前境界：&e{1}"
 }

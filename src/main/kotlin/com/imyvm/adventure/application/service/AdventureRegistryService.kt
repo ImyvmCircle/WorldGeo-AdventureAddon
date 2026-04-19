@@ -17,11 +17,26 @@ class AdventureRegistryService {
         AdventureDatabase.state.anchors.values.toList()
 
     fun findAnchor(worldId: String, blockPos: BlockPos): AdventureAnchor? =
-        AdventureDatabase.state.anchors.values.firstOrNull { it.matches(worldId, blockPos) }
+        findAnchor(worldId, blockPos, includeDisabled = false)
+
+    fun findAnchor(worldId: String, blockPos: BlockPos, includeDisabled: Boolean): AdventureAnchor? =
+        AdventureDatabase.state.anchors.values.firstOrNull { anchor ->
+            anchor.worldId == worldId &&
+                anchor.x == blockPos.x &&
+                anchor.y == blockPos.y &&
+                anchor.z == blockPos.z &&
+                (includeDisabled || anchor.enabled)
+        }
 
     fun upsertAnchor(anchor: AdventureAnchor) {
         AdventureDatabase.state.anchors[anchor.anchorId] = anchor
     }
+
+    fun removeAnchor(anchorId: String): AdventureAnchor? =
+        AdventureDatabase.state.anchors.remove(anchorId)
+
+    fun getRegionProfile(regionNumberId: Int): AdventureRegionProfile? =
+        AdventureDatabase.state.regionProfiles[regionNumberId]
 
     fun getOrCreateRegionProfile(regionNumberId: Int, displayName: String): AdventureRegionProfile {
         val existing = AdventureDatabase.state.regionProfiles[regionNumberId]
