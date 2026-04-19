@@ -1,1 +1,14 @@
-{}
+{
+  "label.none": "unbound",
+  "system.lifecycle.initialized": "&aWorldGeo-AdventureAddon initialized. &7Version: &e{0}",
+  "command.about.header": "&6&lWorldGeo Adventure framework status",
+  "command.about.version": "&7Version: &e{0}",
+  "command.about.language": "&7Language: &e{0}",
+  "command.about.database": "&7Database schema: &e{0}&7, region profiles: &e{1}&7, anchors: &e{2}&7, projects: &e{3}",
+  "command.about.cadence": "&7Cadence: boards/rumors &e{0}m&7, market settlement &e{1}h",
+  "command.about.finance": "&7Finance caps: &e{0}&7 transfers/settlement, &e{1}%&7 total exposure, &e{2}%&7 per project",
+  "command.reload.success": "&aAdventure configuration reloaded.",
+  "command.debug.context": "&7Runtime ready: &a{0}&7, server bound: &a{1}",
+  "interaction.anchor.open": "&6&l[{0}]&r &aAdventure anchor recognized. &7Region: &e{1}&7, scope: &b{2}",
+  "interaction.anchor.region_mismatch": "&cAnchor &e{0}&c is registered to a different region. &7Current region: &e{1}"
+}

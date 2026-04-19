@@ -1,1 +1,14 @@
-{}
+{
+  "label.none": "未绑定",
+  "system.lifecycle.initialized": "&aWorldGeo-AdventureAddon 已初始化。&7版本：&e{0}",
+  "command.about.header": "&6&lWorldGeo Adventure 框架状态",
+  "command.about.version": "&7版本：&e{0}",
+  "command.about.language": "&7语言：&e{0}",
+  "command.about.database": "&7数据库 Schema：&e{0}&7，区域档案：&e{1}&7，锚点：&e{2}&7，项目：&e{3}",
+  "command.about.cadence": "&7节奏：合同/谣言刷新 &e{0} 分钟&7，市场结算 &e{1} 小时",
+  "command.about.finance": "&7金融限制：单结算期转让 &e{0} 次&7，总在险资本 &e{1}%&7，单项目上限 &e{2}%",
+  "command.reload.success": "&aAdventure 配置已重载。",
+  "command.debug.context": "&7运行时已就绪：&a{0}&7，服务器已绑定：&a{1}",
+  "interaction.anchor.open": "&6&l[{0}]&r &a已识别 Adventure 锚点。&7境界：&e{1}&7，地方：&b{2}",
+  "interaction.anchor.region_mismatch": "&c锚点 &e{0}&c 的登记区域与当前位置不符。&7当前境界：&e{1}"
+}
