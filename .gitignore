@@ -45,8 +45,6 @@ replay_*.log
 
 # github
 
-.github/agents/prompts
-
 # design drafts
 
 design/
