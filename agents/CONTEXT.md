@@ -5,21 +5,16 @@
 ## 读取顺序
 
 1. 本文件。
-2. 产出或改写正式文字时读取 `agents/WRITING_STYLE.md`。
-3. 执行开发任务时读取 `agents/instructions/development.instructions.md`。
-4. 按开发规则索引读取相关专项 instruction。
+2. 产出或改写正式文字时读取 `agents/WRITING_STYLE.md`，并完整执行其第四节写后链路；缺标题审定、机械扫描、人工判退、CV/TTR 或 AIGC-X 段落结果，任务未完成。
+3. 在 `design/analysis/` 下新增或改写分析文时读取 `agents/instructions/design-iteration.instructions.md`。
+4. 执行开发任务时读取 `agents/instructions/development.instructions.md`。
+5. 按开发规则索引读取相关专项 instruction。
 
-## 执行纪律
+## 本项目专有规则
 
-1. 说什么执行什么。
-2. 没说的不执行。
-3. 不确定就问，别猜；发现缺失文件、依赖 API、服务器设定、项目意图或设计框架时先询问。
-4. 给验收标准，别给步骤。
-5. 执行修改任务前先检查远端仓库主分支状态，并在不发生冲突时尽可能同步；冲突交由用户裁决。
-6. 不主动使用 git；prompt 要求 git、提交、推送、拉取或发布时，先同步远端再操作。
-7. 完成后给一条符合项目既有格式的 commit 描述建议。
-8. 不自行更新 tag、版本号或发布版本。
-9. 原则上不新建 class，不添加 comments，除非 prompt 要求。
+1. 执行修改任务前先检查远端仓库主分支状态，并在不发生冲突时尽可能同步；冲突交由用户裁决。
+2. 不主动使用 git；prompt 要求 git、提交、推送、拉取或发布时，先同步远端再操作。
+3. 原则上不新建 class，不添加 comments，除非 prompt 要求。
 
 ## 规则选择
 
