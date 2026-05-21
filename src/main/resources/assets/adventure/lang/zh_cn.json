@@ -19,6 +19,6 @@
   "command.admin.anchor.info.error.not_found": "&c坐标 &e({0},{1},{2})&c 未登记 Adventure 锚点。",
   "command.admin.anchor.remove.success": "&a已移除锚点：&e{0}&7 / &b{1}&7，坐标：&e({2},{3},{4})",
   "command.admin.anchor.remove.error.not_found": "&c坐标 &e({0},{1},{2})&c 未登记 Adventure 锚点。",
-  "interaction.anchor.open": "&6&l[{0}]&r &a已识别 Adventure 锚点。&7境界：&e{1}&7，地方：&b{2}",
-  "interaction.anchor.region_mismatch": "&c锚点 &e{0}&c 的登记区域与当前位置不符。&7当前境界：&e{1}"
+  "interaction.anchor.open": "&6&l[{0}]&r &a已识别 Adventure 锚点。&7地点：&e{1}&7，现场：&b{2}",
+  "interaction.anchor.region_mismatch": "&c锚点 &e{0}&c 的登记地点与当前位置不符。&7当前地点：&e{1}"
 }

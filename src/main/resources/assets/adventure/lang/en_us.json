@@ -19,6 +19,6 @@
   "command.admin.anchor.info.error.not_found": "&cNo Adventure anchor is registered at &e({0},{1},{2})&c.",
   "command.admin.anchor.remove.success": "&aAnchor removed: &e{0}&7 / &b{1}&7 at &e({2},{3},{4})",
   "command.admin.anchor.remove.error.not_found": "&cNo Adventure anchor is registered at &e({0},{1},{2})&c.",
-  "interaction.anchor.open": "&6&l[{0}]&r &aAdventure anchor recognized. &7Region: &e{1}&7, scope: &b{2}",
-  "interaction.anchor.region_mismatch": "&cAnchor &e{0}&c is registered to a different region. &7Current region: &e{1}"
+  "interaction.anchor.open": "&6&l[{0}]&r &aAdventure anchor recognized. &7Place: &e{1}&7, site: &b{2}",
+  "interaction.anchor.region_mismatch": "&cAnchor &e{0}&c is registered to a different place. &7Current place: &e{1}"
 }
