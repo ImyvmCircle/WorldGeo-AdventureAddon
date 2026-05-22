@@ -16,9 +16,6 @@ class WorldGeoBridgeService {
     fun getRegion(regionNumberId: Int): Region? =
         RegionDataApi.getRegion(regionNumberId)
 
-    fun getWorldId(level: Level): String =
-        level.dimension().toString()
-
     fun resolveAt(level: Level, blockPos: BlockPos): ResolvedAdventureLocation? =
         RegionDataApi.getRegionScopePairByLocation(level, blockPos)?.let { pair ->
             ResolvedAdventureLocation(

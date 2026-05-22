@@ -3,7 +3,7 @@
 	"id": "adventure",
 	"version": "${version}",
 	"name": "WorldGeo-AdventureAddon",
-	"description": "An extension mod for ImyvmWorldGeo to provide adventure attribute features.",
+	"description": "Adventure runtime addon for IMYVMWorldGeo region and scope mechanics.",
 	"authors": [
 		"Doohaey Re"
 	],
@@ -27,6 +27,9 @@
 		"minecraft": "26.1",
 		"java": ">=25",
 		"fabric-api": "*",
-		"fabric-language-kotlin": "*"
+		"fabric-language-kotlin": "*",
+		"hoki": "*",
+		"imyvmworldgeo": "*",
+		"community": "*"
 	}
 }

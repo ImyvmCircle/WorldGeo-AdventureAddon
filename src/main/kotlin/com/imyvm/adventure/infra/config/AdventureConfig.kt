@@ -31,7 +31,7 @@ class AdventureConfig : HokiConfig("Adventure.conf") {
         val DEBUG_LOGGING = Option(
             "debug.logging",
             false,
-            "whether to emit periodic debug information for the runtime skeleton."
+            "whether to emit periodic debug information for the scheduler heartbeat."
         ) { obj, path ->
             obj.getBoolean(path)
         }
