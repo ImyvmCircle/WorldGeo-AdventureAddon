@@ -45,6 +45,10 @@ replay_*.log
 
 # github
 
+# agent task archives
+
+agents/prompts/archive/
+
 # design drafts
 
 design/
