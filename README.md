@@ -12,9 +12,9 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 
 ## 强制依赖
 
-IMYVMWorldGeo 承担地理层。Adventure 读取 scope 元数据、进出事件、统计快照和邻接数据，用于野区定价和异变窗口。
+IMYVMWorldGeo 承担地理层。Adventure 读取 scope 元数据、进出事件和统计快照，用于野区定价和异变窗口。
 
-WorldGeo-CommunityAddon 承担机构层。Adventure 读取国库账户、Community 发展度统计、指数持仓投影和周竞赛结算记录。
+WorldGeo-CommunityAddon 承担机构层。Adventure 读取国库账户与 Community 发展度统计，通过 `CommunityApi.deposit` / `withdraw` 即时存取国库。指数持仓、保单、竞赛结算等 Adventure 派生记录由 Adventure 自身持久化。
 
 Hoki 承担配置和翻译资源加载。翻译能力由资源文件机制扩展。
 
@@ -26,6 +26,6 @@ Hoki 承担配置和翻译资源加载。翻译能力由资源文件机制扩展
 
 ## 集成契约
 
-Adventure 的市场记录绑定 GeoScope 周期。WorldGeo 提供稳定 `scopeId`、scope 归属历史、统计快照、邻接关系和进出事件。野区开关与风险基线沿用 WorldGeo extension setting key，Adventure 读取有效值后进入指数计算。
+Adventure 的市场记录绑定 GeoScope 周期。WorldGeo 提供稳定 `scopeId`、scope 归属历史、统计快照和进出事件。野区开关与风险基线沿用 WorldGeo extension setting key，Adventure 读取有效值后进入指数计算。
 
-Community 通过机构投影参与市场。Adventure 保存指数份额、保险、操作分和周结算真源；Community 保存国库保留金、指数持仓投影、发展度快照和竞赛结果投影。所有跨仓库资金和投影动作都使用 Adventure 生成的幂等 ID。
+Community 通过即时收支参与市场。Adventure 保存指数份额、保险、操作分、周结算、赞助、保单、竞赛结算全部真源；Community 只承担国库存取与发展度计算。所有跨仓库资金动作都使用 Adventure 生成的幂等 ID，由 Adventure 自查避免重发。
