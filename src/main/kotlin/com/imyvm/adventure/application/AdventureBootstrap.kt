@@ -2,6 +2,7 @@ package com.imyvm.adventure.application
 
 import com.imyvm.adventure.WorldGeoAdventureAddon
 import com.imyvm.adventure.application.service.AdventureScheduleService
+import com.imyvm.adventure.application.service.CommunityBridgeService
 import com.imyvm.adventure.application.service.WorldGeoBridgeService
 import com.imyvm.adventure.infra.config.AdventureConfig
 import com.imyvm.adventure.infra.config.GameplayConfig
@@ -28,10 +29,12 @@ object AdventureBootstrap {
 
     private fun bindServices() {
         val worldGeoBridgeService = WorldGeoBridgeService()
+        val communityBridgeService = CommunityBridgeService()
         val scheduleService = AdventureScheduleService()
 
         AdventureServices.bind(
             worldGeoBridgeService = worldGeoBridgeService,
+            communityBridgeService = communityBridgeService,
             scheduleService = scheduleService
         )
     }
