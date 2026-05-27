@@ -98,13 +98,17 @@ R2 还设两层反操纵硬约束，分别是单玩家单 scope 周操作分上�
 
 ### R3 装备直出
 
-R3 在试炼宝库与配置标记的箱子开启时即时计算。直出概率由产出预估指数线性映射。
+R3 在试炼宝库与配置标记的箱子开启时即时计算。直出概率由产出预估指数与当日月相 `phase_weight` 共同决定。
 
 ```
-P_direct = clip(p_base + k · ProductionIndex_norm, p_min, p_max)
+P_direct = clip(p_base + k · ProductionIndex_norm,
+                p_min · phase_weight,
+                p_max · phase_weight)
 ```
 
-默认 `p_base = 0.02, k = 0.08, p_min = 0.01, p_max = 0.10`。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置。多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段；研究 tier 折扣降低兑换所需材料数量。
+默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
+
+单玩家本周直出价值受 `value_per_player_weekly_cap` 限制，按 `item-basket` 折算金额累加；超出封顶后容器回退到原版战利品。多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段；研究 tier 折扣降低兑换所需材料数量。
 
 ### R4 研究进度
 

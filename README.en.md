@@ -98,13 +98,17 @@ R2 carries two layers of anti-manipulation hard constraints: a per-player per-sc
 
 ### R3 Direct Equipment Drop
 
-R3 is computed at the moment a trial vault or configured chest opens. The drop probability maps linearly from the output forecast index.
+R3 is computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index and the day's moon-phase `phase_weight`.
 
 ```
-P_direct = clip(p_base + k · ProductionIndex_norm, p_min, p_max)
+P_direct = clip(p_base + k · ProductionIndex_norm,
+                p_min · phase_weight,
+                p_max · phase_weight)
 ```
 
-Defaults are `p_base = 0.02, k = 0.08, p_min = 0.01, p_max = 0.10`. Drop items are configured in the `direct_equipment` section of `loot-windows.json`. Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`; research-tier discounts reduce the material count required.
+Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. Drop items are configured in the `direct_equipment` section of `loot-windows.json`. Each entry carries `rarity` and `min_norm`; the roll first filters entries by `ProductionIndex_norm ≥ min_norm`, then samples within by `weight`. Low-tier items (`min_norm = 0`) are reachable on all moon-phase days, mid-tier (`min_norm = 0.35`) unlocks from half moon upward, and high-tier (`min_norm = 0.70`) unlocks from near-full moon upward.
+
+Per-player weekly drop value is capped by `value_per_player_weekly_cap`, accumulated through the `item-basket` valuation; once the cap is hit, the container falls back to vanilla loot. Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`; research-tier discounts reduce the material count required.
 
 ### R4 Research Progress
 
