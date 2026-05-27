@@ -28,25 +28,21 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 
 ## 玩法简要介绍
 
-野区是 IMYVMWorldGeo 划定的高风险地理空间。玩家以 Community scope 为大本营，向野区 scope 出击。野区始终对玩家开放，产出节奏跟随 Minecraft 服务器世界月相 0–7 的当日相位变化，每日 Asia/Shanghai 零点切档。满月（月相 0）权重 1.0，近满月（月相 1, 7）0.7，半月（2, 6）0.4，蛾眉与残月（3, 5）0.2，新月（4）0.1。
+野区是 IMYVMWorldGeo 划定的高风险地理空间，玩家以 Community scope 为大本营，向野区 scope 出击。野区始终对玩家开放，产出与风险随当日月相变化，满月日与近满月日为高产高风险窗口，新月日趋于平淡。
 
-玩家穿过 scope 边界进入野区时，Adventure 自动打开一个行动段。scope 公告显示当日月相、产出预估、异变压力、阵亡风险、任务失败四个指数与当日专属行为开放状态；scope 内的原版效果切换至当日月相对应的模板。
+玩家跨入野区时，行动段自动开启，scope 公告展示当日月相、产出、压力、风险与任务失败四项指数，并标明当日开放的专属行为。野区内的氛围与效果按月相切换。
 
-满月与近满月日开放 P1 探测与 P5 空中分支的完整计分。读取探针、采集方块与实体样本、刷掘可疑方块属于探测行为；骑乘 HappyGhast 的空中命中与空中吊运属于空中运输。其他月相日，这两类行为仍可执行，事件入现场证据进入研究提交与保险事故记录，但操作分计 0。
+野区行为分为探测、采样、战斗、解谜与容器、空中分支、地面运输与贸易六类。探测与空中分支仅在满月与近满月日记录操作分，其他月相日仅留存事件证据。其余行为在所有月相日均可计入。每个动作即时产生小额行动津贴，并按月相、整体度、热力衰减折算为操作分。容器开启可直接获得装备产出，向研究 NPC 提交样本可推进社区研究进度。
 
-P2 战斗、P3 解谜、P4 容器、P5 地面运输、P6 交易在所有月相日按当日 phase_weight 入账。击杀压力点附近的怪物、触发红石与潜声与铜灯解谜、开启箱子与试炼宝库、地面拴绳货物与矿车与船与骆驼运输、向研究 NPC 与村民交易，每个动作命中事件元组时由 listener 即时打分。动作津贴 R1 即时入玩家钱包，操作分 R2 即时部分按 `immediate_cash_ratio` 同步入钱包、deferred 部分进 scope 指数兑现池等待周结算，装备直出 R3 在容器开启时即时入背包，研究进度 R4 在向研究 NPC 提交样本时即时进入社区金库。
+玩家自主选择撤离时机。携带样本、拴绳货物或载具返回撤离点或 Community scope，途中的掉落与死亡会降低样本证据完整度，到达终点后本段记录锁定。死亡触发阵亡保险，按保单档位赔付玩家损失，未撤离样本按损坏率折算入保险事故记录。
 
-玩家自主决定撤离时机。携带样本箱、拴绳货物或载具向配置撤离点或 Community scope 移动；移动过程的掉落事故与死亡降低样本的证据完整度 integrity。玩家到达撤离点或跨回 Community scope 时，本段所有现场目标与操作分条目的 integrity 固化，本段记录锁定。
+社区层面，Community 金库可承保玩家保单、出资认购野区指数份额、出资推进研究进度。份额市场按周运行，周一开盘并接受下单，周六锁价，周日周结算时按指数结果赔付。研究进度跨越阈值后，整个 Community 享受野区行动的成本折扣与收益加成，并获得一次性金钱与装备包奖励。
 
-死亡触发 R6 阵亡保险按保单档位赔付。未撤离样本按损坏率折算 integrity 进入保险事故记录。死亡罚没按资金流向表执行。心跳采样判定的掉线超时按死亡撤离失败处理。
-
-社区份额市场按周节奏运行。周一 Asia/Shanghai 零点开盘公布定价区间并接受下单，周六 18:00 锁价，周日 18:00 周结算时按指数实际值赔付。
-
-周日 18:00 触发周结算。玩家本周所有行动段的操作分按动作类别加权求和得 OperationScoreRaw，按玩家版 CES `Cap_week` 截断得 OperationScore；R2 deferred 部分按指数兑现池 `realization_rate = base_rate · (1 + γ · ProductionIndex_norm)` 折算入玩家钱包，超 `ScopeWeeklyCap` 部分销毁 50%，周末兑现池未兑现余额销毁 100%。结算阶段依序执行 R6 阵亡保险熔断对账与 prorate 扣回、R5 份额结算、R7 竞赛奖金发放。结算同时写出 JSONL 全量归档与 Markdown 宏观报告。
+每周日 Asia/Shanghai 18:00 触发周结算。本周所有行动段的操作分按动作类别加权汇总、按周封顶截断后，与指数兑现池折算入玩家钱包；阵亡保险与份额市场依序结算。结算同步生成全量归档与宏观周报。
 
 ## 机制完整说明
 
-机制按七个回报通道展开。每个通道说明来源主体、触发时点、入账主体、计算与上限、销毁规则。五指数、月相日、周结算与宏观评估作为支撑机制单列。
+机制按六个回报通道展开。每个通道说明来源主体、触发时点、入账主体、计算与上限、销毁规则。五指数、月相日、周结算与宏观评估作为支撑机制单列。
 
 ### 五指数
 
@@ -230,30 +226,9 @@ payout       = max(0, gross_payout · (1 − deductible_ratio[tier])) · prorate
 
 保费 100% 入社区金库，手续费按 30% 销毁。死亡罚没按 70% 销毁、30% 入社区金库。
 
-### R7 竞赛奖池
-
-R7 在赛季节点开放。每场竞赛覆盖一个或多个 scope、一段固定时长、一组明示规则，规则在赛事配置里独立声明。
-
-奖池由三处合成：
-
-```
-PrizePool = entry_fee_sum + sponsor_grant_sum
-          + base_subsidy · (1 + θ_subsidy · (1 − ParticipationRate_norm))
-```
-
-玩家报名费受 `entry_fee_min = 50` 与 `entry_fee_max = 2000` 元约束，50% 进奖池、50% 销毁。社区赞助拨款分三档（small 10000 元 / medium 30000 元 / large 80000 元），单社区单赛季赞助总额受 `100000 · A_community` 限制。系统补贴基线 50000 元，冷门赛季按 `θ_subsidy = 0.50` 上浮，热门趋于基线。
-
-玩家得分按竞赛权重向量加权四种 metric：操作分、指数兑现额、装备直出件数、撤离完整度。每项按竞赛窗口的 95 分位点归一化，低于 `min_count` 阈值的 metric 计 0 分防刷。社区维度赛事按 `mean / sum / top_k_mean` 三选一聚合玩家成绩。
-
-奖金分配三选一：线性 top-N（前 N 名等差衰减）、指数阶梯（前 N 名 1/2 几何衰减）、按分数比例。社区维度赛事 30% 奖金回入社区金库、70% 给参与玩家按 Score 二次分摊。
-
-冷场熔断：参与人数低于 `min_participants = 5` 时赛事作废，报名费全额退款，赞助拨款全额退款，系统补贴全额销毁。
-
-奖金在竞赛 `end_time` 所在周的周日 18:00 周结算时统一发放，时序在 R6 熔断对账与 R5 份额结算之后。跨周赛事在每周周日 18:00 走中间快照，`end_time` 所在周才执行最终发放。
-
 ### 周结算与宏观评估
 
-周日 18:00 启动结算时序，依次完成行动段冻结、社区发展度快照、scope 指数终值、R6 阵亡保险熔断对账与 prorate 扣回、R5 份额市场结算、R7 竞赛奖金发放、玩家与社区 `Cap_week` 计算、宏观反馈控制器、操作分折算入账、研究里程碑与保险续期处理、周日志归档、cycle 切换。每阶段在事务内完成，任一阶段失败回滚到阶段起点的快照。
+周日 18:00 启动结算时序，依次完成行动段冻结、社区发展度快照、scope 指数终值、R6 阵亡保险熔断对账与 prorate 扣回、R5 份额市场结算、玩家与社区 `Cap_week` 计算、宏观反馈控制器、操作分折算入账、研究里程碑与保险续期处理、周日志归档、cycle 切换。每阶段在事务内完成，任一阶段失败回滚到阶段起点的快照。
 
 宏观评估采用流量-存量两表加滚动指标。流量表记录本周新增、销毁、流转；存量表记录本周末的玩家钱包总额 M2_player、社区金库总额 M2_community、在线物品折算总值 item_stock。滚动指标按周末计算。
 
@@ -264,9 +239,9 @@ PrizePool = entry_fee_sum + sponsor_grant_sum
 
 CRR 目标值 0.6。CRR 区间设五级告警：低于 0.4 红色社区流动性偏低、0.4–0.5 黄色预警、0.5–0.7 绿色目标区、0.7–0.85 黄色玩家端紧缩、高于 0.85 红色玩家端枯竭。告警等级作为三层反馈环的输入。
 
-宏观反馈环分三层。第一层公式内反向调节，PressureIndex、DeathRiskIndex、CRR 直接出现在 R2 / R5 / R6 / R7 当周公式中，事件 tick 即生效：R2 兑现率乘 `(1 − μ_pressure · PressureIndex_norm)`、R5 区间宽度按 `(1 + ξ_band · |CRR − 0.6|)` 扩张、R6 保费按 PressureIndex 与 DeathRiskIndex 上浮且承保上限按 PressureIndex 收紧、R7 补贴按 CRR 偏离方向上下浮。默认 `μ_pressure = 0.30`、`ξ_band = 0.50`、`θ_subsidy_high = 0.20`、`θ_subsidy_low = 0.10`，系数集中在 `economy.toml [macro_feedback]`。
+宏观反馈环分三层。第一层公式内反向调节，PressureIndex、DeathRiskIndex、CRR 直接出现在 R2 / R5 / R6 当周公式中，事件 tick 即生效：R2 兑现率乘 `(1 − μ_pressure · PressureIndex_norm)`、R5 区间宽度按 `(1 + ξ_band · |CRR − 0.6|)` 扩张、R6 保费按 PressureIndex 与 DeathRiskIndex 上浮且承保上限按 PressureIndex 收紧。默认 `μ_pressure = 0.30`、`ξ_band = 0.50`，系数集中在 `economy.toml [macro_feedback]`。
 
-第二层自动微调器（autopilot）按 `settlement.toml [autopilot]` 段开关，默认关闭。开启后周日 18:00 `compute_macro_feedback` 子阶段算出 CRR / PressureIndex / DeathRiskIndex 全局误差，按 `Δratio = gain · error` 调节四个白名单参数：`realization.base_rate`（CRR 反馈）、`shares.base_pos_per_scope`（PressureIndex 反馈）、`insurance.base_rate`（DeathRiskIndex 反馈）、`competition.base_subsidy`（CRR 反馈）。单参数单周变化封顶 ±2%，硬边界 `[初值·0.5, 初值·2.0]`，越界冻结并红色告警。所有 autopilot 调整写 `economy_adjust(source="autopilot")` 表，24 小时内可由管理员命令回滚。autopilot 关闭时仍把"建议参数包"写入周报与 `tune_suggestion` 表，等待人工应用。
+第二层自动微调器（autopilot）按 `settlement.toml [autopilot]` 段开关，默认关闭。开启后周日 18:00 `compute_macro_feedback` 子阶段算出 CRR / PressureIndex / DeathRiskIndex 全局误差，按 `Δratio = gain · error` 调节三个白名单参数：`realization.base_rate`（CRR 反馈）、`shares.base_pos_per_scope`（PressureIndex 反馈）、`insurance.base_rate`（DeathRiskIndex 反馈）。单参数单周变化封顶 ±2%，硬边界 `[初值·0.5, 初值·2.0]`，越界冻结并红色告警。所有 autopilot 调整写 `economy_adjust(source="autopilot")` 表，24 小时内可由管理员命令回滚。autopilot 关闭时仍把"建议参数包"写入周报与 `tune_suggestion` 表，等待人工应用。
 
 第三层管理员游戏内命令是最高权限层，详见下文 `/adventure tune` 命令族。
 
@@ -308,4 +283,4 @@ Adventure 服务端进程在 Fabric 入口启动后绑定七个对外可观察�
 
 管理员可热更的配置面分两类。参数权重以 toml 文件维护，覆盖经济参数、指数权重、研究阈值、保险参数与结算参数。产出内容以 json 文件维护，覆盖物品篮折算系数、样本白名单、容器装备直出与解谜配置、探针档位、scope 效果模板。形态属于代码层不可热更的数学公式集中在指数引擎、周结算系统与宏观反馈控制器内部。
 
-Adventure 自身持久化所有派生表，包括 cycle、scope 指数快照、行动段、操作分账本、现场目标、份额持仓、保单、研究进度、竞赛、资金流向、宏观指标、调参日志与建议参数包。社区金库的出入账通过 `CommunityApi.deposit` 与 `CommunityApi.withdraw` 即时执行，跨仓库资金动作使用 Adventure 生成的幂等 ID 自查避免重发。
+Adventure 自身持久化所有派生表，包括 cycle、scope 指数快照、行动段、操作分账本、现场目标、份额持仓、保单、研究进度、资金流向、宏观指标、调参日志与建议参数包。社区金库的出入账通过 `CommunityApi.deposit` 与 `CommunityApi.withdraw` 即时执行，跨仓库资金动作使用 Adventure 生成的幂等 ID 自查避免重发。

@@ -28,25 +28,21 @@ The deployment workflow places the Adventure jar and all required dependency jar
 
 ## Gameplay Overview
 
-The wilderness is the high-risk geographic space defined by IMYVMWorldGeo. Players use Community scopes as their home base and venture out into wilderness scopes. The wilderness stays open to players at all times; output rhythm follows the day's Minecraft server moon phase 0–7, switching at midnight Asia/Shanghai. Full moon (phase 0) carries weight 1.0, near-full (phases 1 and 7) 0.7, half moon (2 and 6) 0.4, crescent and waning crescent (3 and 5) 0.2, new moon (4) 0.1.
+The wilderness is the high-risk geographic space defined by IMYVMWorldGeo. Players use Community scopes as their home base and venture out into wilderness scopes. The wilderness stays open at all times, with output and risk shifting by the day's moon phase: full and near-full moon days are the high-yield, high-risk windows, while new moon days lean quiet.
 
-When a player crosses a scope boundary into the wilderness, Adventure opens an action session automatically. The scope bulletin shows the day's moon phase, the four indices (output forecast, anomaly pressure, death risk, mission failure) and the open state of phase-exclusive actions; vanilla effects inside the scope switch to the template matched to the day's moon phase.
+When a player crosses into the wilderness, an action session opens automatically. The scope bulletin shows the day's moon phase, the four indices (output, pressure, risk, mission failure), and which phase-exclusive actions are open. Atmosphere and effects inside the scope switch with the phase.
 
-Full and near-full moon days open the full scoring for the P1 probing and P5 aerial branches. Reading probes, sampling blocks and entities, and brushing suspicious blocks belong to probing; HappyGhast-mounted aerial strikes and aerial cargo lifts belong to aerial transport. On other moon-phase days these two action classes remain executable and the events still enter field evidence for research submission and insurance records, but the operation score posts as zero.
+Wilderness actions fall into six classes: probing, sampling, combat, puzzle and container, aerial branch, and ground transport and trade. Probing and aerial branches score only on full and near-full moon days; on other days they still produce evidence but do not score. The remaining classes score on all moon-phase days. Each action immediately produces a small action allowance and, weighted by phase, integrity, and heat decay, an operation score. Opening containers grants direct equipment drops; submitting samples to research NPCs advances community research.
 
-P2 combat, P3 puzzle, P4 container, P5 ground transport, and P6 trade post under the day's `phase_weight` across all moon-phase days. Killing mobs near pressure points, triggering redstone / sculk / copper-bulb puzzles, opening chests and trial vaults, leashed cargo / minecart / boat / camel ground transport, and trading with research NPCs or villagers all score instantly through the event listener once an action matches an event tuple. Action allowance R1 enters the player wallet immediately, operation score R2 splits at the event into an immediate-cash portion paid via `immediate_cash_ratio` and a deferred portion staged in the scope's index realization pool for weekly settlement, direct equipment drop R3 enters the inventory at the moment of container opening, and research progress R4 enters the community treasury at the moment of sample submission to a research NPC.
+Players choose their own evacuation timing. Carrying samples, leashed cargo, or vehicles back to an evacuation point or a Community scope completes the session; drops or deaths en route reduce sample evidence integrity, and once the player reaches the endpoint the session record locks. Death triggers the insurance payout at the policy's tier; unevacuated samples convert into insurance event records by their damage-adjusted integrity.
 
-Players decide their own evacuation timing. Carrying sample crates, leashed cargo, or vehicles toward configured evacuation points or a Community scope counts as evacuation; drop accidents and deaths along the way reduce the `integrity` of sample evidence. When a player reaches an evacuation point or crosses back into a Community scope, every field objective and operation-score entry of the session locks in its integrity and the session record closes.
+At the community level, the Community treasury can underwrite player policies, subscribe to wilderness index shares, and fund research progress. The shares market runs weekly: Monday opens issuance and orders, Saturday locks the price, Sunday settles against the realized index. When research crosses a tier threshold, the entire Community enjoys a cost discount and yield bonus on wilderness operations, alongside a one-time cash and equipment-pack reward.
 
-Death triggers R6 insurance payout at the policy's tier. Unevacuated samples convert to insurance event records under their damage-rate-adjusted integrity. Death forfeitures follow the fund-flow table. Heartbeat-sampled disconnect timeouts are treated as a failed evacuation death.
-
-The community shares market runs on a weekly cadence. Monday at midnight Asia/Shanghai opens issuance with the pricing range and accepts orders; Saturday 18:00 locks the price; Sunday 18:00 weekly settlement pays out against the realized index value.
-
-Sunday 18:00 triggers weekly settlement. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`, then truncated by the player-side CES `Cap_week` to yield `OperationScore`; the R2 deferred portion converts to wallet credit through the index realization pool at `realization_rate = base_rate · (1 + γ · ProductionIndex_norm)`, with portions exceeding `ScopeWeeklyCap` burned 50% and any unrealized pool residue burned 100% at week-end. Settlement runs in order: R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share settlement, then R7 competition payout. Settlement also emits a JSONL full archive and a Markdown macro report.
+Sunday 18:00 Asia/Shanghai triggers weekly settlement. The week's operation scores are aggregated by action class, capped weekly, and converted into player wallets through the index realization pool; insurance and the shares market settle in sequence. Settlement also emits a full archive and a macro weekly report.
 
 ## Mechanics
 
-The mechanics are organized along the seven return channels. Each channel specifies its source actor, trigger moment, receiving wallet, computation with caps, and burn rule. The five indices, moon-phase days, weekly settlement, and macro evaluation are listed separately as supporting mechanics.
+The mechanics are organized along the six return channels. Each channel specifies its source actor, trigger moment, receiving wallet, computation with caps, and burn rule. The five indices, moon-phase days, weekly settlement, and macro evaluation are listed separately as supporting mechanics.
 
 ### Five Indices
 
@@ -230,30 +226,9 @@ Per-scope weekly cumulative payout circuit-breaker: `ScopePayoutCapWeekly = base
 
 Premiums credit 100% to the community treasury; the policy fee burns 30%. Death forfeitures burn 70% and credit 30% to the community treasury.
 
-### R7 Competition Pool
-
-R7 opens at season nodes. Each competition covers one or more scopes, a fixed duration, and an explicit ruleset declared in the competition config.
-
-The prize pool combines three sources:
-
-```
-PrizePool = entry_fee_sum + sponsor_grant_sum
-          + base_subsidy · (1 + θ_subsidy · (1 − ParticipationRate_norm))
-```
-
-Player entry fees are bounded by `entry_fee_min = 50` and `entry_fee_max = 2000` Yuan; 50% enters the pool and 50% burns. Community sponsorship grants come in three tiers (small 10000 / medium 30000 / large 80000 Yuan), with a per-community per-season ceiling of `100000 · A_community` Yuan. The system subsidy baseline is 50000 Yuan, marked up by `θ_subsidy = 0.50` for cold competitions and converging to baseline for hot ones.
-
-Player score is a weighted sum of four metrics: operation score, exchange-pool redemption, direct equipment drop count, and evacuation completeness. Each metric normalizes against the 95th percentile within the competition window; metrics under the `min_count` threshold contribute zero, blocking low-engagement farming. Community-dimension competitions aggregate player scores by `mean / sum / top_k_mean`.
-
-Prize distribution offers three modes: linear top-N (arithmetic decay across the top N), exponential step (1/2 geometric decay across the top N), and score-proportional (all qualified players share by score weight). Community-dimension competitions route 30% of the prize to the community treasury and distribute the remaining 70% across participating players by score.
-
-Cold-event circuit-breaker: when participation drops below `min_participants = 5`, the competition voids — entry fees refund fully, sponsor grants refund fully, and the system subsidy burns fully.
-
-Prizes pay out at Sunday 18:00 weekly settlement in the week containing `end_time`, sequenced after the R6 circuit-breaker reconciliation and the R5 share settlement. Multi-week competitions snapshot intermediate progress every Sunday 18:00 but only finalize in the `end_time` week.
-
 ### Weekly Settlement and Macro Evaluation
 
-Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, R7 competition payout, player and community `Cap_week` computation, macro feedback controller, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
+Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, player and community `Cap_week` computation, macro feedback controller, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
 
 Macro evaluation uses a flow–stock dual-table model plus rolling indicators. The flow table records inflows, burns, and transfers of the week; the stock table records week-end values of player wallet total `M2_player`, community treasury total `M2_community`, and the converted value of in-circulation items `item_stock`. Rolling indicators compute at week-end.
 
@@ -264,9 +239,9 @@ Macro evaluation uses a flow–stock dual-table model plus rolling indicators. T
 
 The CRR target is 0.6. Five alert levels: below 0.4 red community liquidity low, 0.4–0.5 yellow warning, 0.5–0.7 green target band, 0.7–0.85 yellow player-side tightening, above 0.85 red player-side depletion. Alert levels feed the three-layer feedback loop below.
 
-The macro feedback loop runs in three layers. Layer one is formula-level reverse adjustment: PressureIndex, DeathRiskIndex, and CRR appear directly in the in-week R2 / R5 / R6 / R7 formulas and take effect at event tick. R2 realization rate multiplies by `(1 − μ_pressure · PressureIndex_norm)`; R5 band width scales by `(1 + ξ_band · |CRR − 0.6|)`; R6 premium scales up under PressureIndex and DeathRiskIndex while underwriting caps tighten by PressureIndex; R7 subsidy scales up or down by the sign of the CRR deviation. Defaults are `μ_pressure = 0.30`, `ξ_band = 0.50`, `θ_subsidy_high = 0.20`, `θ_subsidy_low = 0.10`, configured in `economy.toml [macro_feedback]`.
+The macro feedback loop runs in three layers. Layer one is formula-level reverse adjustment: PressureIndex, DeathRiskIndex, and CRR appear directly in the in-week R2 / R5 / R6 formulas and take effect at event tick. R2 realization rate multiplies by `(1 − μ_pressure · PressureIndex_norm)`; R5 band width scales by `(1 + ξ_band · |CRR − 0.6|)`; R6 premium scales up under PressureIndex and DeathRiskIndex while underwriting caps tighten by PressureIndex. Defaults are `μ_pressure = 0.30`, `ξ_band = 0.50`, configured in `economy.toml [macro_feedback]`.
 
-Layer two is the autopilot cross-week parameter migrator, toggled by `settlement.toml [autopilot]`, defaulting to off. When on, the `compute_macro_feedback` sub-stage at Sunday 18:00 computes global CRR / PressureIndex / DeathRiskIndex errors and adjusts four whitelisted parameters via `Δratio = gain · error`: `realization.base_rate` (CRR feedback), `shares.base_pos_per_scope` (PressureIndex feedback), `insurance.base_rate` (DeathRiskIndex feedback), and `competition.base_subsidy` (CRR feedback). A single parameter shifts at most ±2% per week, with hard bounds `[initial · 0.5, initial · 2.0]`; out-of-bound values freeze that parameter and raise a red alert. Every autopilot change writes to `economy_adjust(source="autopilot")` and is rollback-eligible by administrator command within 24 hours. When autopilot is off, the controller still emits a "suggested parameter pack" into the weekly report and `tune_suggestion` table for manual application.
+Layer two is the autopilot cross-week parameter migrator, toggled by `settlement.toml [autopilot]`, defaulting to off. When on, the `compute_macro_feedback` sub-stage at Sunday 18:00 computes global CRR / PressureIndex / DeathRiskIndex errors and adjusts three whitelisted parameters via `Δratio = gain · error`: `realization.base_rate` (CRR feedback), `shares.base_pos_per_scope` (PressureIndex feedback), and `insurance.base_rate` (DeathRiskIndex feedback). A single parameter shifts at most ±2% per week, with hard bounds `[initial · 0.5, initial · 2.0]`; out-of-bound values freeze that parameter and raise a red alert. Every autopilot change writes to `economy_adjust(source="autopilot")` and is rollback-eligible by administrator command within 24 hours. When autopilot is off, the controller still emits a "suggested parameter pack" into the weekly report and `tune_suggestion` table for manual application.
 
 Layer three is the administrator in-game command set, detailed under `/adventure tune` below as the highest-authority intervention layer.
 
@@ -308,4 +283,4 @@ The `/adventure tune` family requires OP level ≥ 4. Every command execution wr
 
 The administrator-hot-reloadable configuration surface has two faces. Parameter weights live in TOML files covering economic parameters, index weights, research thresholds, insurance parameters, and settlement parameters. Output content lives in JSON files covering item-basket conversion coefficients, sample whitelists, container direct-drop and puzzle configurations, probe tiers, and scope effect templates. Mathematical formulas, treated as a non-hot-reloadable code-layer concern, are concentrated inside the Index Engine, Weekly Settlement, and Macro Feedback Controller modules.
 
-Adventure persists all derived tables on its own, including cycles, scope index snapshots, action sessions, operation-score ledger, field objectives, share positions, policies, research progress, competitions, fund flows, macro indicators, parameter-adjustment logs, and suggested parameter packs. Community treasury deposits and withdrawals execute instantly through `CommunityApi.deposit` and `CommunityApi.withdraw`; cross-repository fund operations use Adventure-generated idempotent IDs to self-check against duplicate submission.
+Adventure persists all derived tables on its own, including cycles, scope index snapshots, action sessions, operation-score ledger, field objectives, share positions, policies, research progress, fund flows, macro indicators, parameter-adjustment logs, and suggested parameter packs. Community treasury deposits and withdrawals execute instantly through `CommunityApi.deposit` and `CommunityApi.withdraw`; cross-repository fund operations use Adventure-generated idempotent IDs to self-check against duplicate submission.
