@@ -108,7 +108,9 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
 
-单玩家本周直出价值受 `value_per_player_weekly_cap` 限制，按 `item-basket` 折算金额累加；超出封顶后容器回退到原版战利品。多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段；研究 tier 折扣降低兑换所需材料数量。
+单玩家本周装备产出价值受 `value_per_player_weekly_cap` 限制。R3 直出与 R4 craft 产出的装备共享同一封顶，按 `item-basket` 折算金额累加；R3 触发封顶时容器回退到原版战利品，R4 craft 触发封顶时拒绝下单。本周走运抽到高价值直出后 craft 配额自动收紧；反之 craft 配额宽松，让运气派与规划派共享一个产出节奏。
+
+多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段。craft 成本同时受研究 tier 折扣与 scope 直出热度影响：`craft_cost_eff = base · (1 - research_discount) · (1 + α · scope_direct_value_norm)`，默认 `α = 0.30`。scope 本周直出火热时同 scope 同 archetype 装备的 craft 成本最多上浮 30%；scope 直出冷清时 craft 成本回落到基线。研究中心同时开放拆解工位，玩家投入 R3 直出件按 rarity 退回基础/研究/高级材料（低档 0.70、中档 0.60、高档 0.50），把溢出的低档存货流入研究材料池。
 
 `sky_ghast` 模板对空中分支声明独立参数，把 `phase_weight` 钳到 0.40 下限，让新月日的空中容器仍享受半月等效的概率窗口，反映 HappyGhast 养护成本带来的稀缺加成。
 
