@@ -110,6 +110,8 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 单玩家本周直出价值受 `value_per_player_weekly_cap` 限制，按 `item-basket` 折算金额累加；超出封顶后容器回退到原版战利品。多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段；研究 tier 折扣降低兑换所需材料数量。
 
+`sky_ghast` 模板对空中分支声明独立参数，把 `phase_weight` 钳到 0.40 下限，让新月日的空中容器仍享受半月等效的概率窗口，反映 HappyGhast 养护成本带来的稀缺加成。
+
 ### R4 研究进度
 
 R4 由社区金库出资与玩家提交样本两种来源构成。研究中心收到样本或研究金时即时计入 `research_progress`。

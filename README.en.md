@@ -110,6 +110,8 @@ Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. Drop items 
 
 Per-player weekly drop value is capped by `value_per_player_weekly_cap`, accumulated through the `item-basket` valuation; once the cap is hit, the container falls back to vanilla loot. Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`; research-tier discounts reduce the material count required.
 
+The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that HappyGhast husbandry costs imply.
+
 ### R4 Research Progress
 
 R4 has two sources: community treasury funding and player sample submission. The research center credits `research_progress` instantly upon receiving samples or research funds.
