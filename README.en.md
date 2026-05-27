@@ -241,7 +241,7 @@ Prizes pay out at Sunday 18:00 weekly settlement in the week containing `end_tim
 
 ### Weekly Settlement and Macro Evaluation
 
-Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, R7 competition payout, player and community `Cap_week` computation, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
+Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, R7 competition payout, player and community `Cap_week` computation, macro feedback controller, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
 
 Macro evaluation uses a flow–stock dual-table model plus rolling indicators. The flow table records inflows, burns, and transfers of the week; the stock table records week-end values of player wallet total `M2_player`, community treasury total `M2_community`, and the converted value of in-circulation items `item_stock`. Rolling indicators compute at week-end.
 
@@ -250,13 +250,19 @@ Macro evaluation uses a flow–stock dual-table model plus rolling indicators. T
 | CRR | `M2_community / (M2_player + M2_community)` |
 | Velocity | `(paid_out_player + paid_out_community) / avg M2` |
 
-The CRR target is 0.6. The CRR range carries five alert levels: below 0.4 red community liquidity low, 0.4–0.5 yellow warning, 0.5–0.7 green target band, 0.7–0.85 yellow player-side tightening, above 0.85 red player-side depletion. Alerts write into the weekly Markdown report; administrators read the report, decide on manual parameter adjustments, and the adjustment actions write into the operation log. Adventure does not run automatic feedback control.
+The CRR target is 0.6. Five alert levels: below 0.4 red community liquidity low, 0.4–0.5 yellow warning, 0.5–0.7 green target band, 0.7–0.85 yellow player-side tightening, above 0.85 red player-side depletion. Alert levels feed the three-layer feedback loop below.
 
-Weekly logs land in three layers: SQLite primary store, weekly JSONL archive, and weekly Markdown report. JSONL and Markdown retain long-term.
+The macro feedback loop runs in three layers. Layer one is formula-level reverse adjustment: PressureIndex, DeathRiskIndex, and CRR appear directly in the in-week R2 / R5 / R6 / R7 formulas and take effect at event tick. R2 realization rate multiplies by `(1 − μ_pressure · PressureIndex_norm)`; R5 band width scales by `(1 + ξ_band · |CRR − 0.6|)`; R6 premium scales up under PressureIndex and DeathRiskIndex while underwriting caps tighten by PressureIndex; R7 subsidy scales up or down by the sign of the CRR deviation. Defaults are `μ_pressure = 0.30`, `ξ_band = 0.50`, `θ_subsidy_high = 0.20`, `θ_subsidy_low = 0.10`, configured in `economy.toml [macro_feedback]`.
+
+Layer two is the autopilot cross-week parameter migrator, toggled by `settlement.toml [autopilot]`, defaulting to off. When on, the `compute_macro_feedback` sub-stage at Sunday 18:00 computes global CRR / PressureIndex / DeathRiskIndex errors and adjusts four whitelisted parameters via `Δratio = gain · error`: `realization.base_rate` (CRR feedback), `shares.base_pos_per_scope` (PressureIndex feedback), `insurance.base_rate` (DeathRiskIndex feedback), and `competition.base_subsidy` (CRR feedback). A single parameter shifts at most ±2% per week, with hard bounds `[initial · 0.5, initial · 2.0]`; out-of-bound values freeze that parameter and raise a red alert. Every autopilot change writes to `economy_adjust(source="autopilot")` and is rollback-eligible by administrator command within 24 hours. When autopilot is off, the controller still emits a "suggested parameter pack" into the weekly report and `tune_suggestion` table for manual application.
+
+Layer three is the administrator in-game command set, detailed under `/adventure tune` below as the highest-authority intervention layer.
+
+Weekly logs land in three layers: SQLite primary store, weekly JSONL archive, and weekly Markdown report. JSONL and Markdown retain long-term. The Markdown report adds two new sections, `autopilot_adjustments` and `tune_suggestions`, recording this week's automatic changes and next week's suggested parameter pack.
 
 ## Code Architecture
 
-After the Fabric entrypoint launches, the Adventure server process binds six externally observable runtime modules.
+After the Fabric entrypoint launches, the Adventure server process binds seven externally observable runtime modules.
 
 | Module | Responsibility |
 | --- | --- |
@@ -266,6 +272,7 @@ After the Fabric entrypoint launches, the Adventure server process binds six ext
 | Insurance System | Issue policies, compute premiums, pay out on death events |
 | Research Facility System | Receive samples and research funds, maintain tier progress, apply research discounts |
 | Weekly Settlement | Trigger the settlement sequence at Asia/Shanghai Sunday 18:00, emit the macro report |
+| Macro Feedback Controller | Compute CRR / Pressure / DeathRisk errors in the `compute_macro_feedback` sub-stage, write `economy_adjust` and `tune_suggestion`, serve the `/adventure tune` command family |
 
 External commands:
 
@@ -277,7 +284,16 @@ External commands:
 | `/adventure debug context` | Output current cycle, scope, and player context |
 | `/adventure log query <filter>` | Query weekly logs |
 | `/adventure log export <range> <format>` | Export weekly logs |
+| `/adventure tune list [last N]` | List the most recent N parameter-adjustment records |
+| `/adventure tune get <param.path>` | Read a parameter's current effective value and initial value |
+| `/adventure tune set <param.path> <value> [reason]` | Overwrite the parameter immediately; takes effect from the next event tick |
+| `/adventure tune apply <suggestion_id>` | Apply the suggested parameter pack identified by `suggestion_id` in this week's report |
+| `/adventure tune rollback <adjust_id>` | Roll back the change identified by `adjustId` to its `old_value`; restricted to the current cycle and 24-hour window |
+| `/adventure tune autopilot on\|off` | Toggle the autopilot flag; effective from next Sunday 18:00 |
+| `/adventure tune dryrun` | Output the Δratio set the autopilot would write this week if enabled, without executing |
 
-The administrator-hot-reloadable configuration surface has two faces. Parameter weights live in TOML files covering economic parameters, index weights, research thresholds, insurance parameters, and settlement parameters. Output content lives in JSON files covering item-basket conversion coefficients, sample whitelists, container direct-drop and puzzle configurations, probe tiers, and scope effect templates. Mathematical formulas, treated as a non-hot-reloadable code-layer concern, are concentrated inside the Index Engine and Weekly Settlement modules.
+The `/adventure tune` family requires OP level ≥ 4. Every command execution writes into the `economy_adjust` operation log with a `source` field distinguishing `autopilot / manual / rollback / suggestion_apply`. Before execution each command validates against the whitelist `allowed_params` and hard bounds; out-of-bound calls are rejected with a red notice.
 
-Adventure persists all derived tables on its own, including cycles, scope index snapshots, action sessions, operation-score ledger, field objectives, share positions, policies, research progress, competitions, fund flows, macro indicators, and parameter-adjustment logs. Community treasury deposits and withdrawals execute instantly through `CommunityApi.deposit` and `CommunityApi.withdraw`; cross-repository fund operations use Adventure-generated idempotent IDs to self-check against duplicate submission.
+The administrator-hot-reloadable configuration surface has two faces. Parameter weights live in TOML files covering economic parameters, index weights, research thresholds, insurance parameters, and settlement parameters. Output content lives in JSON files covering item-basket conversion coefficients, sample whitelists, container direct-drop and puzzle configurations, probe tiers, and scope effect templates. Mathematical formulas, treated as a non-hot-reloadable code-layer concern, are concentrated inside the Index Engine, Weekly Settlement, and Macro Feedback Controller modules.
+
+Adventure persists all derived tables on its own, including cycles, scope index snapshots, action sessions, operation-score ledger, field objectives, share positions, policies, research progress, competitions, fund flows, macro indicators, parameter-adjustment logs, and suggested parameter packs. Community treasury deposits and withdrawals execute instantly through `CommunityApi.deposit` and `CommunityApi.withdraw`; cross-repository fund operations use Adventure-generated idempotent IDs to self-check against duplicate submission.
