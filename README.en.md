@@ -42,7 +42,7 @@ Death triggers R6 insurance payout at the policy's tier. Unevacuated samples con
 
 The community shares market runs on a weekly cadence. Monday at midnight Asia/Shanghai opens issuance with the pricing range and accepts orders; Saturday 18:00 locks the price; Sunday 18:00 weekly settlement pays out against the realized index value.
 
-Sunday 18:00 triggers weekly settlement. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`, then truncated by the player-side CES `Cap_week` to yield `OperationScore`; the R2 residue converts to wallet credit through the index realization pool, with portions exceeding `ScopeWeeklyCap` burned at the configured burn ratio. R5 share settlement and R6 renewal payouts run in the same sequence, and R7 competition prizes pay out under season rules. Settlement also emits a JSONL full archive and a Markdown macro report.
+Sunday 18:00 triggers weekly settlement. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`, then truncated by the player-side CES `Cap_week` to yield `OperationScore`; the R2 residue converts to wallet credit through the index realization pool, with portions exceeding `ScopeWeeklyCap` burned at the configured burn ratio. Settlement runs in order: R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share settlement, then R7 competition payout. Settlement also emits a JSONL full archive and a Markdown macro report.
 
 ## Mechanics
 
@@ -111,7 +111,7 @@ Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. `af` maps s
 
 Per-player weekly equipment-output value is capped by `value_per_player_weekly_cap`. R3 drops and R4 crafts share the same cap, accumulated through the `item-basket` valuation; when R3 hits the cap the container falls back to vanilla loot, when R4 craft hits the cap the order is rejected. A lucky week with high-value drops automatically tightens the remaining craft budget; a quiet week leaves the craft budget generous, so luck-driven and planning-driven players share one output rhythm.
 
-Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = base · (1 - research_discount) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in R3 drops and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
+Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - research_discount) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in R3 drops and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
 
 The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that HappyGhast husbandry costs imply.
 
@@ -136,7 +136,7 @@ Two contract forms exist. Trend shares bind to a long or short direction and set
 
 ```
 subscription_cost = shares · price_issue · margin_ratio
-gross_payout      = shares · direction_sign · (Index_settle − price_issue) · (1 − house_rate)
+gross_payout      = shares · direction_sign · (Index(s, t_end) − price_issue) · (1 − house_rate)
 net_payout        = max(0, gross_payout + subscription_cost) − subscription_cost
 ```
 
@@ -146,7 +146,7 @@ Range shares use five fixed bands published at the Monday open (crash / low / mi
 
 ```
 payout_rate = (1 − house_rate) / max(P_hit_estimate, P_hit_min)
-payout      = shares · payout_rate · I[Index_settle ∈ band]
+payout      = shares · payout_rate · I[Index(s, t_end) ∈ band]
 ```
 
 Default `P_hit_min = 0.05` prevents extreme bands from blowing up the payout rate. The issue price uses the prior week's index EMA. The share-house fee burns 50%.
@@ -183,7 +183,7 @@ gross_payout = coverage_ratio[tier] · ( equipment_loss_value + sample_loss_valu
 payout       = max(0, gross_payout · (1 − deductible_ratio[tier])) · prorate_factor
 ```
 
-Equipment and sample values use the live `item-basket` conversion. Claim denials neither consume the policy nor refund the premium, and cover three cases: PVP death, voluntary fall (FALL death with fall height ≥ 30 blocks and no hostile-entity damage event in the prior 60 seconds), and out-of-scope timeout death (death more than `scope_exit_grace_seconds = 600` seconds after leaving the scope boundary).
+Equipment and sample values use the live `item-basket` conversion. Claim denials neither consume the policy nor refund the premium, and cover three cases: PVP death, voluntary fall (FALL death with fall height ≥ `voluntary_fall_height_threshold = 30` blocks and no hostile-entity damage event within `voluntary_fall_damage_window_seconds = 60` seconds), and out-of-scope timeout death (death more than `scope_exit_grace_seconds = 600` seconds after leaving the scope boundary).
 
 Community-treasury underwriting is gated by three caps: per-policy payout ≤ 5000 Yuan; per scope per community cumulative underwriting `≤ base_underwriting_cap · A_community · (1 − δ · PressureIndex_norm)` (base = 200000 Yuan, δ = 0.40); community-wide underwriting `≤ 0.60 · TreasuryBalance`. When the treasury falls below 50000 Yuan, that community suspends new policy sales.
 
@@ -214,7 +214,7 @@ Prizes pay out at Sunday 18:00 weekly settlement in the week containing `end_tim
 
 ### Weekly Settlement and Macro Evaluation
 
-Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, share market settlement, player and community `Cap_week` computation, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
+Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, R7 competition payout, player and community `Cap_week` computation, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
 
 Macro evaluation uses a flow–stock dual-table model plus rolling indicators. The flow table records inflows, burns, and transfers of the week; the stock table records week-end values of player wallet total `M2_player`, community treasury total `M2_community`, and the converted value of in-circulation items `item_stock`. Rolling indicators compute at week-end.
 
