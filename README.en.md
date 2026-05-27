@@ -98,15 +98,16 @@ R2 carries two layers of anti-manipulation hard constraints: a per-player per-sc
 
 ### R3 Direct Equipment Drop
 
-R3 is computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index and the day's moon-phase `phase_weight`.
+R3 is computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index, the day's moon-phase `phase_weight`, and the scope×template archetype-match coefficient `af`.
 
 ```
+af       = archetype_match_matrix[tpl.template_archetype][scope.archetype]
 P_direct = clip(p_base + k · ProductionIndex_norm,
-                p_min · phase_weight,
-                p_max · phase_weight)
+                p_min · phase_weight · af,
+                p_max · phase_weight · af)
 ```
 
-Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. Drop items are configured in the `direct_equipment` section of `loot-windows.json`. Each entry carries `rarity` and `min_norm`; the roll first filters entries by `ProductionIndex_norm ≥ min_norm`, then samples within by `weight`. Low-tier items (`min_norm = 0`) are reachable on all moon-phase days, mid-tier (`min_norm = 0.35`) unlocks from half moon upward, and high-tier (`min_norm = 0.70`) unlocks from near-full moon upward.
+Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. `af` maps scope archetype (`desert / aquatic / aerial / underground / forest / plains`) against template archetype (`combat / puzzle / vault / aerial / logistics / trade`) into a 0.3–1.5 coefficient: diagonal matches lift the probability (aerial template × aerial scope = 1.5), distant mismatches suppress it (aerial template × desert scope = 0.4), while mismatched scopes still retain a baseline probability rather than dropping to zero. Matrix mean is about 0.85, leaving the global P_direct expectation unchanged. Drop items are configured in the `direct_equipment` section of `loot-windows.json`. Each entry carries `rarity` and `min_norm`; the roll first filters entries by `ProductionIndex_norm ≥ min_norm`, then samples within by `weight`. Low-tier items (`min_norm = 0`) are reachable on all moon-phase days, mid-tier (`min_norm = 0.35`) unlocks from half moon upward, and high-tier (`min_norm = 0.70`) unlocks from near-full moon upward.
 
 Per-player weekly equipment-output value is capped by `value_per_player_weekly_cap`. R3 drops and R4 crafts share the same cap, accumulated through the `item-basket` valuation; when R3 hits the cap the container falls back to vanilla loot, when R4 craft hits the cap the order is rejected. A lucky week with high-value drops automatically tightens the remaining craft budget; a quiet week leaves the craft budget generous, so luck-driven and planning-driven players share one output rhythm.
 

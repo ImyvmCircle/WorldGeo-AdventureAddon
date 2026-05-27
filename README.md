@@ -98,15 +98,16 @@ R2 还设两层反操纵硬约束，分别是单玩家单 scope 周操作分上�
 
 ### R3 装备直出
 
-R3 在试炼宝库与配置标记的箱子开启时即时计算。直出概率由产出预估指数与当日月相 `phase_weight` 共同决定。
+R3 在试炼宝库与配置标记的箱子开启时即时计算。直出概率由产出预估指数、当日月相 `phase_weight` 与 scope×模板 archetype 匹配系数 `af` 共同决定。
 
 ```
+af       = archetype_match_matrix[tpl.template_archetype][scope.archetype]
 P_direct = clip(p_base + k · ProductionIndex_norm,
-                p_min · phase_weight,
-                p_max · phase_weight)
+                p_min · phase_weight · af,
+                p_max · phase_weight · af)
 ```
 
-默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
+默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。`af` 把 scope 形态（`desert / aquatic / aerial / underground / forest / plains`）与模板玩法分支（`combat / puzzle / vault / aerial / logistics / trade`）匹配到 0.3–1.5 的系数：对角线匹配抬升直出概率（aerial 模板 × aerial scope = 1.5），远离匹配压制（aerial 模板 × desert scope = 0.4），错配场景仍保留基础概率不归零。矩阵均值约 0.85，不放大全局期望。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
 
 单玩家本周装备产出价值受 `value_per_player_weekly_cap` 限制。R3 直出与 R4 craft 产出的装备共享同一封顶，按 `item-basket` 折算金额累加；R3 触发封顶时容器回退到原版战利品，R4 craft 触发封顶时拒绝下单。本周走运抽到高价值直出后 craft 配额自动收紧；反之 craft 配额宽松，让运气派与规划派共享一个产出节奏。
 
