@@ -34,7 +34,7 @@ When a player crosses a scope boundary into the wilderness, Adventure opens an a
 
 Full and near-full moon days open the full scoring for the P1 probing and P5 aerial branches. Reading probes, sampling blocks and entities, and brushing suspicious blocks belong to probing; HappyGhast-mounted aerial strikes and aerial cargo lifts belong to aerial transport. On other moon-phase days these two action classes remain executable and the events still enter field evidence for research submission and insurance records, but the operation score posts as zero.
 
-P2 combat, P3 puzzle, P4 container, P5 ground transport, and P6 trade post under the day's `phase_weight` across all moon-phase days. Killing mobs near pressure points, triggering redstone / sculk / copper-bulb puzzles, opening chests and trial vaults, leashed cargo / minecart / boat / camel ground transport, and trading with research NPCs or villagers all score instantly through the event listener once an action matches an event tuple. Action allowance R1 enters the player wallet immediately, operation score R2 enters the candidate pool to wait for weekly settlement, direct equipment drop R3 enters the inventory at the moment of container opening, and research progress R4 enters the community treasury at the moment of sample submission to a research NPC.
+P2 combat, P3 puzzle, P4 container, P5 ground transport, and P6 trade post under the day's `phase_weight` across all moon-phase days. Killing mobs near pressure points, triggering redstone / sculk / copper-bulb puzzles, opening chests and trial vaults, leashed cargo / minecart / boat / camel ground transport, and trading with research NPCs or villagers all score instantly through the event listener once an action matches an event tuple. Action allowance R1 enters the player wallet immediately, operation score R2 splits at the event into an immediate-cash portion paid via `immediate_cash_ratio` and a deferred portion staged in the scope's index realization pool for weekly settlement, direct equipment drop R3 enters the inventory at the moment of container opening, and research progress R4 enters the community treasury at the moment of sample submission to a research NPC.
 
 Players decide their own evacuation timing. Carrying sample crates, leashed cargo, or vehicles toward configured evacuation points or a Community scope counts as evacuation; drop accidents and deaths along the way reduce the `integrity` of sample evidence. When a player reaches an evacuation point or crosses back into a Community scope, every field objective and operation-score entry of the session locks in its integrity and the session record closes.
 
@@ -42,7 +42,7 @@ Death triggers R6 insurance payout at the policy's tier. Unevacuated samples con
 
 The community shares market runs on a weekly cadence. Monday at midnight Asia/Shanghai opens issuance with the pricing range and accepts orders; Saturday 18:00 locks the price; Sunday 18:00 weekly settlement pays out against the realized index value.
 
-Sunday 18:00 triggers weekly settlement. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`, then truncated by the player-side CES `Cap_week` to yield `OperationScore`; the R2 residue converts to wallet credit through the index realization pool, with portions exceeding `ScopeWeeklyCap` burned at the configured burn ratio. Settlement runs in order: R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share settlement, then R7 competition payout. Settlement also emits a JSONL full archive and a Markdown macro report.
+Sunday 18:00 triggers weekly settlement. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`, then truncated by the player-side CES `Cap_week` to yield `OperationScore`; the R2 deferred portion converts to wallet credit through the index realization pool at `realization_rate = base_rate · (1 + γ · ProductionIndex_norm)`, with portions exceeding `ScopeWeeklyCap` burned 50% and any unrealized pool residue burned 100% at week-end. Settlement runs in order: R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share settlement, then R7 competition payout. Settlement also emits a JSONL full archive and a Markdown macro report.
 
 ## Mechanics
 
@@ -78,11 +78,27 @@ At moon-phase rollover Adventure calls WorldGeo's timed effect overlay API to sw
 
 ### R1 Action Allowance
 
-R1 is an Adventure-system subsidy paid into the player wallet at the moment an action matches an event tuple. The amount is determined by `baseScore`, the action class coefficient, and the day's `phase_weight`. R1 does not enter the candidate pool, the CES weekly conversion, or the burn pipeline.
+R1 is an Adventure-system subsidy paid into the player wallet at the moment an action matches an event tuple.
+
+```
+R1(event) = α_R1[class] · baseScore[event.type] · w_class[class] · phase_weight · (1 − heat_penalty)
+```
+
+`α_R1` is configured per action class: P6 logistics-and-trade gets 0.30 for the "small, fast, immediate" flow; P4 puzzle-and-vault gets 0.20 for the high-risk premium; P3 combat and P5 aerial branch get 0.10; P2 sampling gets 0.05; P1 probing gets 0.10. R1 and R2 share the same anti-manipulation filter: when a session triggers a session-level hard rule, R1 is zeroed alongside R2; when a chunk × event type exceeds `heat_threshold_kills_per_minute = 8` within a 5-minute rolling window, `heat_penalty = 1 − 0.5^(excess/threshold)` applies geometric softening. R1 lands in the wallet at the event itself and takes no part in the R2 dual-track realization, the CES weekly conversion, or the burn pipeline.
 
 ### R2 Operation-Score Conversion
 
-R2 is the core return channel. All operation-score entries of the player's sessions in the week are weighted-summed by action class into `OperationScoreRaw`.
+R2 is the core return channel. Event-level operation scores accumulate by action class:
+
+```
+opScore(event)        = baseScore[event.type] · w_class[class] · phase_weight · integrity · (1 − heat_penalty)
+session.opScore       = Σ_event opScore(event) · (1 − antimanip_kill[session])
+PlayerScopeWeekScore  = clip( Σ_session session.opScore, 0, per_scope_player_cap )
+OperationScoreRaw     = Σ_scope PlayerScopeWeekScore
+OperationScore        = min( OperationScoreRaw, Cap_week_player )
+```
+
+Twelve event types map to six action classes by primary interaction shape: `read` to P1 Probing; `sample_block / sample_entity / brush` to P2 Sampling; `combat` to P3 Combat; `puzzle / vault / chest` to P4 Puzzle-and-Vault; `air_hit / air_haul` to P5 Aerial; `logistics / trade` to P6 Logistics-and-Trade. `baseScore` is configured in `economy.toml [operation_score]` and `w_class` in `[operation_score.class_weight]` (P1=0.6 / P2=0.8 / P3=1.0 / P4=1.2 / P5=1.3 / P6=0.5), routing the high-risk-window premium into P4 and P5.
 
 The weekly earning cap uses a CES function.
 
@@ -92,9 +108,20 @@ Cap_week = A · ( w_M · M^ρ + w_G · G^ρ + w_T · T^ρ )^(η/ρ)
 
 `M` is money input, `G` is item input converted through the item-basket coefficients, and `T` is effective playtime. Player and community sides use independent parameters; `ρ < 0` produces a semi-complementary curve and `η < 1` produces decreasing returns to scale. The break-even line `A_be` is set to `0.6 · A` on the player side and `0.85 · A` on the community side.
 
-After truncation by `Cap_week_player`, the result becomes `OperationScore`, which R2 converts into the player wallet; the index realization portion is further truncated by the scope weekly index realization cap `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)`, with the excess burned at 50% and any unrealized index residue at week-end burned at 100%.
+`OperationScore` follows a dual-track realization path. The immediate portion converts to wallet credit at event tick; the deferred portion accrues into a scope-level index realization pool:
 
-R2 carries two layers of anti-manipulation hard constraints: a per-player per-scope weekly operation-score cap `per_scope_player_cap`, and the spatial-temporal floor's player heat deduction. Behavior that fixates on a single point, uses closed mob-farm structures, lacks movement trajectory, lacks probe-reading changes, or lacks pressure-point interaction does not enter the Adventure ledger and falls back to vanilla yields.
+```
+immediate_cash(event)    = immediate_cash_ratio · opScore(event) · realization_rate(scope, t)
+deferred_score(p, s)     = (1 − immediate_cash_ratio) · PlayerScopeWeekScore(p, s)
+realization_rate(s, t)   = base_rate · (1 + γ_index · ProductionIndex_norm(s, t))
+deferred_cash(p, s)      = min( deferred_score · realization_rate(s, t_end), ScopeWeeklyCapRemaining(s) )
+burn_overflow(p, s)      = (deferred_score · realization_rate − deferred_cash) · overflow_burn_ratio
+burn_unredeemed(s)       = pool_residue_at_week_end(s)
+```
+
+Defaults: `immediate_cash_ratio = 0.40`, `base_rate = 0.05 Yuan/score`, `γ_index = 0.40`, `overflow_burn_ratio = 0.50`. The realization rate floats in `0.05–0.07 Yuan/score` with scope production heat. The index realization pool is truncated by the scope weekly cap `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)`, with the excess burned at 50% and any unrealized residue at week-end burned at 100%.
+
+R2 carries two anti-manipulation layers: session-level hard rules and event-level heat softening. Four independent session-level signals — point clustering (≥ 80% of kills inside a 4-block radius cube over a 5-minute window), closed mob farm (movement convex hull / session duration < 30 m²/min), no probe-reading change (P1/P2 reading and sampling index deltas both = 0), and session-long AFK (event density < 0.5 events/minute and session duration ≥ 10 minutes) — zero the entire session's operation score on any hit, fall back to vanilla loot, and bypass the Adventure ledger. Event-level heat softening rolls per chunk × event type and applies geometric decay above the threshold. Point-fixated farming, closed farm structures, and AFK sessions revert to vanilla yields.
 
 ### R3 Direct Equipment Drop
 
@@ -234,7 +261,7 @@ After the Fabric entrypoint launches, the Adventure server process binds six ext
 | Module | Responsibility |
 | --- | --- |
 | Index Engine | Synthesize the five indices, maintain the spatial-temporal floor, write scope index snapshots |
-| Operation Ledger | Listen to action events, compute `baseScore` and `integrity`, write to the operation-score candidate pool |
+| Operation Ledger | Listen to action events, compute `baseScore` and `integrity`, write to `operation_ledger` and route the dual-track immediate vs deferred allocation |
 | Share Market | Accept community treasury subscriptions, settle by contract form |
 | Insurance System | Issue policies, compute premiums, pay out on death events |
 | Research Facility System | Receive samples and research funds, maintain tier progress, apply research discounts |

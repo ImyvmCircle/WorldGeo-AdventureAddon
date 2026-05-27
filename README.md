@@ -34,7 +34,7 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 
 满月与近满月日开放 P1 探测与 P5 空中分支的完整计分。读取探针、采集方块与实体样本、刷掘可疑方块属于探测行为；骑乘 HappyGhast 的空中命中与空中吊运属于空中运输。其他月相日，这两类行为仍可执行，事件入现场证据进入研究提交与保险事故记录，但操作分计 0。
 
-P2 战斗、P3 解谜、P4 容器、P5 地面运输、P6 交易在所有月相日按当日 phase_weight 入账。击杀压力点附近的怪物、触发红石与潜声与铜灯解谜、开启箱子与试炼宝库、地面拴绳货物与矿车与船与骆驼运输、向研究 NPC 与村民交易，每个动作命中事件元组时由 listener 即时打分。动作津贴 R1 即时入玩家钱包，操作分 R2 进入候选池等待周结算，装备直出 R3 在容器开启时即时入背包，研究进度 R4 在向研究 NPC 提交样本时即时进入社区金库。
+P2 战斗、P3 解谜、P4 容器、P5 地面运输、P6 交易在所有月相日按当日 phase_weight 入账。击杀压力点附近的怪物、触发红石与潜声与铜灯解谜、开启箱子与试炼宝库、地面拴绳货物与矿车与船与骆驼运输、向研究 NPC 与村民交易，每个动作命中事件元组时由 listener 即时打分。动作津贴 R1 即时入玩家钱包，操作分 R2 即时部分按 `immediate_cash_ratio` 同步入钱包、deferred 部分进 scope 指数兑现池等待周结算，装备直出 R3 在容器开启时即时入背包，研究进度 R4 在向研究 NPC 提交样本时即时进入社区金库。
 
 玩家自主决定撤离时机。携带样本箱、拴绳货物或载具向配置撤离点或 Community scope 移动；移动过程的掉落事故与死亡降低样本的证据完整度 integrity。玩家到达撤离点或跨回 Community scope 时，本段所有现场目标与操作分条目的 integrity 固化，本段记录锁定。
 
@@ -42,7 +42,7 @@ P2 战斗、P3 解谜、P4 容器、P5 地面运输、P6 交易在所有月相�
 
 社区份额市场按周节奏运行。周一 Asia/Shanghai 零点开盘公布定价区间并接受下单，周六 18:00 锁价，周日 18:00 周结算时按指数实际值赔付。
 
-周日 18:00 触发周结算。玩家本周所有行动段的操作分按动作类别加权求和得 OperationScoreRaw，按玩家版 CES `Cap_week` 截断得 OperationScore；R2 余量按指数兑现池折算入玩家钱包，超 `ScopeWeeklyCap` 部分按销毁比例销毁。结算阶段依序跑 R6 阵亡保险熔断对账与 prorate 扣回、R5 份额结算、R7 竞赛奖金发放。结算同时写出 JSONL 全量归档与 Markdown 宏观报告。
+周日 18:00 触发周结算。玩家本周所有行动段的操作分按动作类别加权求和得 OperationScoreRaw，按玩家版 CES `Cap_week` 截断得 OperationScore；R2 deferred 部分按指数兑现池 `realization_rate = base_rate · (1 + γ · ProductionIndex_norm)` 折算入玩家钱包，超 `ScopeWeeklyCap` 部分销毁 50%，周末兑现池未兑现余额销毁 100%。结算阶段依序执行 R6 阵亡保险熔断对账与 prorate 扣回、R5 份额结算、R7 竞赛奖金发放。结算同时写出 JSONL 全量归档与 Markdown 宏观报告。
 
 ## 机制完整说明
 
@@ -78,11 +78,27 @@ P2 战斗、P3 解谜、P4 容器、P5 地面运输、P6 交易在所有月相�
 
 ### R1 动作津贴
 
-R1 由 Adventure 系统补贴，在玩家命中事件元组时即时入玩家钱包。金额由 `baseScore`、动作类别系数与当日 `phase_weight` 共同决定，不进入候选池，不参与周结算 CES 折算，不销毁。
+R1 由 Adventure 系统补贴，在玩家命中事件元组时即时入玩家钱包。
+
+```
+R1(event) = α_R1[class] · baseScore[event.type] · w_class[class] · phase_weight · (1 − heat_penalty)
+```
+
+`α_R1` 按动作类别配置，物流贸易 P6 给 0.30 反映"小、快、即时落袋"，解谜与宝库 P4 给 0.20 反映高风险窗口，战斗 P3 与空中分支 P5 给 0.10，采样 P2 给 0.05，探测 P1 给 0.10。R1 与 R2 共用反操纵筛子：行动段命中段级硬判定时 R1 一并归 0；事件 5 分钟滚动窗口内同 chunk 同事件类型超过 `heat_threshold_kills_per_minute = 8` 时按 `heat_penalty = 1 − 0.5^(excess/threshold)` 软衰减。R1 在事件即时入钱包，不参与 R2 双轨兑现、不参与周结算 CES 折算、不销毁。
 
 ### R2 操作分折算
 
-R2 是核心回报通道。玩家本周所有行动段的操作分按动作类别加权求和得 `OperationScoreRaw`。
+R2 是核心回报通道。事件操作分按动作类别累加：
+
+```
+opScore(event)        = baseScore[event.type] · w_class[class] · phase_weight · integrity · (1 − heat_penalty)
+session.opScore       = Σ_event opScore(event) · (1 − antimanip_kill[session])
+PlayerScopeWeekScore  = clip( Σ_session session.opScore, 0, per_scope_player_cap )
+OperationScoreRaw     = Σ_scope PlayerScopeWeekScore
+OperationScore        = min( OperationScoreRaw, Cap_week_player )
+```
+
+12 种事件按主要交互形态归入 6 大动作类别：`read` 进 P1 探测；`sample_block / sample_entity / brush` 进 P2 采样；`combat` 进 P3 战斗；`puzzle / vault / chest` 进 P4 解谜与宝库；`air_hit / air_haul` 进 P5 空中分支；`logistics / trade` 进 P6 物流贸易。`baseScore` 在 `economy.toml [operation_score]` 配置，`w_class` 在 `[operation_score.class_weight]` 配置（P1=0.6 / P2=0.8 / P3=1.0 / P4=1.2 / P5=1.3 / P6=0.5），R2 把高风险窗口的回报溢价推到 P4 与 P5。
 
 周获利上限采用 CES 函数。
 
@@ -92,9 +108,20 @@ Cap_week = A · ( w_M · M^ρ + w_G · G^ρ + w_T · T^ρ )^(η/ρ)
 
 `M` 是金钱投入，`G` 是物品投入并按物品篮折算系数计，`T` 是有效时长。玩家版与社区版采用独立参数，`ρ < 0` 给出半互补，`η < 1` 给出规模报酬递减。回本线 `A_be` 玩家版取 `0.6 · A`，社区版取 `0.85 · A`。
 
-按 `Cap_week_player` 截断后得 `OperationScore`，由 R2 折算入玩家钱包；指数兑现部分按 scope 周指数兑现总上限 `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)` 截断，超出部分销毁 50%，周末未兑现指数余量销毁 100%。
+`OperationScore` 走双轨兑现路径。即时部分按事件 tick 折算入钱包，周末部分进 scope 指数兑现池：
 
-R2 还设两层反操纵硬约束，分别是单玩家单 scope 周操作分上限 `per_scope_player_cap`、空间-时间底层的玩家热力反扣。固定单点高频击杀、封闭刷怪结构、无移动轨迹、无读数变化、无压力点交互的行为不进入 Adventure 账户，沿用原版收益。
+```
+immediate_cash(event)    = immediate_cash_ratio · opScore(event) · realization_rate(scope, t)
+deferred_score(p, s)     = (1 − immediate_cash_ratio) · PlayerScopeWeekScore(p, s)
+realization_rate(s, t)   = base_rate · (1 + γ_index · ProductionIndex_norm(s, t))
+deferred_cash(p, s)      = min( deferred_score · realization_rate(s, t_end), ScopeWeeklyCapRemaining(s) )
+burn_overflow(p, s)      = (deferred_score · realization_rate − deferred_cash) · overflow_burn_ratio
+burn_unredeemed(s)       = pool_residue_at_week_end(s)
+```
+
+默认 `immediate_cash_ratio = 0.40`、`base_rate = 0.05` 元/分、`γ_index = 0.40`、`overflow_burn_ratio = 0.50`。兑现率在 `0.05–0.07` 元/分之间随 scope 产出热度浮动。指数兑现池受 scope 周指数兑现总上限 `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)` 截断，超出部分销毁 50%，周末未兑现指数余量销毁 100%。
+
+R2 还设两层反操纵硬约束：段级判定与事件级热力衰减。段级硬判定四条独立信号——单点高频（5 分钟窗口内 80% 击杀点落在 4 方块半径立方内）、封闭刷怪（移动凸包面积 / 段时长 < 30 m²/min）、无读数变化（P1/P2 类别下读数增量同时为 0）、段长 AFK（事件密度 < 0.5 事件/分钟 且段时长 ≥ 10 分钟）——命中任意一条整段操作分置 0、回退原版掉落、不进 Adventure 资金流。事件级热力衰减按 chunk × 事件类型滚动统计，超出阈值后该类型在该 chunk 内的操作分按几何级数衰减。固定单点高频击杀、封闭刷怪结构、AFK 段沿用原版收益。
 
 ### R3 装备直出
 
@@ -234,7 +261,7 @@ Adventure 服务端进程在 Fabric 入口启动后绑定六个对外可观察�
 | 模块 | 职责 |
 | --- | --- |
 | 指数引擎 | 合成五指数、维护空间-时间底、写入 scope 指数快照 |
-| 操作量账本 | 监听动作事件、计算 baseScore 与 integrity、写入操作分候选池 |
+| 操作量账本 | 监听动作事件、计算 baseScore 与 integrity、写入 `operation_ledger` 并按双轨即时与 deferred 分流落账 |
 | 份额市场 | 接受社区金库认购、按合约形态结算 |
 | 保险系统 | 签发保单、计算保费、按死亡事件赔付 |
 | 研究设施系统 | 接受样本与研究金、维护 tier 进度、应用研究折扣 |
