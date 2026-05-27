@@ -138,20 +138,32 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 单玩家本周装备产出价值受 `value_per_player_weekly_cap` 限制。R3 直出与 R4 craft 产出的装备共享同一封顶，按 `item-basket` 折算金额累加；R3 触发封顶时容器回退到原版战利品，R4 craft 触发封顶时拒绝下单。本周走运抽到高价值直出后 craft 配额自动收紧；反之 craft 配额宽松，让运气派与规划派共享一个产出节奏。
 
-多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段。craft 成本同时受研究 tier 折扣与 scope 直出热度影响：`craft_cost_eff = recipe.base_materials · (1 - research_discount) · (1 + α · scope_direct_value_norm)`，默认 `α = 0.30`。scope 本周直出火热时同 scope 同 archetype 装备的 craft 成本最多上浮 30%；scope 直出冷清时 craft 成本回落到基线。研究中心同时开放拆解工位，玩家投入 R3 直出件按 rarity 退回基础/研究/高级材料（低档 0.70、中档 0.60、高档 0.50），把溢出的低档存货流入研究材料池。
+多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段。craft 成本同时受研究 tier 折扣与 scope 直出热度影响：`craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`，默认 `α = 0.30`。scope 本周直出火热时同 scope 同 archetype 装备的 craft 成本最多上浮 30%；scope 直出冷清时 craft 成本回落到基线。研究中心同时开放拆解工位，玩家投入 R3 直出件按 rarity 退回基础/研究/高级材料（低档 0.70、中档 0.60、高档 0.50），把溢出的低档存货流入研究材料池。
 
 `sky_ghast` 模板对空中分支声明独立参数，把 `phase_weight` 钳到 0.40 下限，让新月日的空中容器仍享受半月等效的概率窗口，反映 HappyGhast 养护成本带来的稀缺加成。
 
 ### R4 研究进度
 
-R4 由社区金库出资与玩家提交样本两种来源构成。研究中心收到样本或研究金时即时计入 `research_progress`。
+R4 走单轴累加器。社区金库出资（C1 通道）与玩家向研究 NPC 提交样本共用同一进度：
 
 ```
-research_progress_delta = funding · tier_efficiency
-research_delta          = sample_value · tier_factor
+research_progress(c) += funding + sample_value
 ```
 
-研究有三级反馈。玩家提交样本时由 Adventure 给玩家发即时小津贴；社区累计样本数与品质达成阈值时解锁认证 tier，给社区发指数与装备折扣；研究投入合计达到设施升级阈值时在全社区范围应用研究折扣、份额佣金减免与保险折扣。认证 tier 1–5 对应研究折扣 0/10/20/30/30%。
+`sample_value` 在 `sample-whitelist.json` 单一字段折算，funding 即金库出资金额。两条入口同权重计入，没有双轴分流。
+
+社区建成研究中心默认获得 tier 1，tier 2–5 由 `research_progress` 越过阈值在周日 18:00 结算时升档，阈值默认 `[0, 0, 10000, 35000, 90000, 200000]`，并随 `A_community` 放缩。
+
+tier 给两个系数：成本折扣 `cost_discount` 与收益加成 `yield_bonus`。
+
+| 系数 | tier 1 | tier 2 | tier 3 | tier 4 | tier 5 |
+| --- | --- | --- | --- | --- | --- |
+| `cost_discount` | 0% | 8% | 16% | 24% | 32% |
+| `yield_bonus` | 0% | 5% | 10% | 15% | 20% |
+
+`cost_discount` 作用于探针购置、采样器购置、研究中心提交手续费、份额房费率 R5、保险保费 R6、研究中心 craft 配方材料；`yield_bonus` 作用于 R2 操作分折算系数、R3 直出概率 `P_direct` 中心值、R4 样本提交即时津贴。两类系数对所有社区成员同步生效。
+
+研究有两类反馈节拍。玩家提交合格样本时即时入账小津贴 `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`，默认 `k_bounty = 0.30`。社区 `research_progress` 越过下一档阈值时在周日 18:00 一次性发放升级奖励：金额 `cash_bonus = α · tier · A_community^β`（默认 `α = 5000, β = 0.60`）入社区金库，同时按 `loot-windows.json` 的 `tier_unlock_bundle.tier{k}` 段发放一袋装备到社区共享库存。同一周内同时越过多档阈值按档数顺序逐档结算。
 
 ### R5 份额结算
 

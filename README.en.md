@@ -138,20 +138,32 @@ Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. `af` maps s
 
 Per-player weekly equipment-output value is capped by `value_per_player_weekly_cap`. R3 drops and R4 crafts share the same cap, accumulated through the `item-basket` valuation; when R3 hits the cap the container falls back to vanilla loot, when R4 craft hits the cap the order is rejected. A lucky week with high-value drops automatically tightens the remaining craft budget; a quiet week leaves the craft budget generous, so luck-driven and planning-driven players share one output rhythm.
 
-Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - research_discount) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in R3 drops and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
+Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in R3 drops and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
 
 The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that HappyGhast husbandry costs imply.
 
 ### R4 Research Progress
 
-R4 has two sources: community treasury funding and player sample submission. The research center credits `research_progress` instantly upon receiving samples or research funds.
+R4 runs a single-axis accumulator. Community treasury funding (C1 channel) and player sample submission to research NPCs share the same progress counter:
 
 ```
-research_progress_delta = funding · tier_efficiency
-research_delta          = sample_value · tier_factor
+research_progress(c) += funding + sample_value
 ```
 
-Research carries three feedback levels. When a player submits samples, Adventure issues an instant micro-allowance to the player; when the community's cumulative sample count and quality reach a threshold, a certification tier unlocks and grants index and equipment discounts to the community; when total research investment reaches the facility upgrade threshold, research discount, share-house commission relief, and insurance discounts apply across the community. Certification tiers 1–5 correspond to research discounts 0 / 10 / 20 / 30 / 30%.
+`sample_value` is the single value field in `sample-whitelist.json`; `funding` is the treasury outlay amount. Both inlets count under the same weight; there is no dual-axis split.
+
+Building a research center grants tier 1 by default. Tier 2–5 unlock when `research_progress` crosses thresholds at the Sunday 18:00 settlement upgrade sub-stage. Default thresholds are `[0, 0, 10000, 35000, 90000, 200000]`, scaling with `A_community`.
+
+Each tier carries two coefficients: cost discount `cost_discount` and yield bonus `yield_bonus`.
+
+| Coefficient | tier 1 | tier 2 | tier 3 | tier 4 | tier 5 |
+| --- | --- | --- | --- | --- | --- |
+| `cost_discount` | 0% | 8% | 16% | 24% | 32% |
+| `yield_bonus` | 0% | 5% | 10% | 15% | 20% |
+
+`cost_discount` applies to probe purchase, sampler purchase, research-center submission fees, R5 share-house rate, R6 insurance premium, and research-center craft recipe materials. `yield_bonus` applies to the R2 operation-score conversion coefficient, the R3 direct-drop probability `P_direct` central value, and the R4 sample submission instant allowance. Both coefficients take effect uniformly across all community members.
+
+Research carries two feedback cadences. When a player submits a qualified sample, an instant micro-allowance posts immediately: `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`, default `k_bounty = 0.30`. When the community's `research_progress` crosses the next threshold, a one-shot upgrade reward fires at Sunday 18:00: a cash bonus `cash_bonus = α · tier · A_community^β` (default `α = 5000, β = 0.60`) enters the treasury, and an equipment bundle from `loot-windows.json` `tier_unlock_bundle.tier{k}` lands in the community shared storage. When multiple thresholds cross in the same week, each tier settles independently in ascending order.
 
 ### R5 Share Settlement
 
