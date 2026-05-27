@@ -193,7 +193,24 @@ Premiums credit 100% to the community treasury; the policy fee burns 30%. Death 
 
 ### R7 Competition Pool
 
-R7 opens at season nodes. A competition covers one or more scopes, a fixed duration, and an explicit ruleset. The ruleset spans scope subset, player or community dimension, scoring formula, prize-pool source, and payout method. The prize pool draws from player entry fees, community sponsorship grants, and Adventure-system subsidies. At settlement, payouts distribute to player wallets and community treasuries under the competition rules.
+R7 opens at season nodes. Each competition covers one or more scopes, a fixed duration, and an explicit ruleset declared in the competition config.
+
+The prize pool combines three sources:
+
+```
+PrizePool = entry_fee_sum + sponsor_grant_sum
+          + base_subsidy · (1 + θ_subsidy · (1 − ParticipationRate_norm))
+```
+
+Player entry fees are bounded by `entry_fee_min = 50` and `entry_fee_max = 2000` Yuan; 50% enters the pool and 50% burns. Community sponsorship grants come in three tiers (small 10000 / medium 30000 / large 80000 Yuan), with a per-community per-season ceiling of `100000 · A_community` Yuan. The system subsidy baseline is 50000 Yuan, marked up by `θ_subsidy = 0.50` for cold competitions and converging to baseline for hot ones.
+
+Player score is a weighted sum of four metrics: operation score, exchange-pool redemption, direct equipment drop count, and evacuation completeness. Each metric normalizes against the 95th percentile within the competition window; metrics under the `min_count` threshold contribute zero, blocking low-engagement farming. Community-dimension competitions aggregate player scores by `mean / sum / top_k_mean`.
+
+Prize distribution offers three modes: linear top-N (arithmetic decay across the top N), exponential step (1/2 geometric decay across the top N), and score-proportional (all qualified players share by score weight). Community-dimension competitions route 30% of the prize to the community treasury and distribute the remaining 70% across participating players by score.
+
+Cold-event circuit-breaker: when participation drops below `min_participants = 5`, the competition voids — entry fees refund fully, sponsor grants refund fully, and the system subsidy burns fully.
+
+Prizes pay out at Sunday 18:00 weekly settlement in the week containing `end_time`, sequenced after the R6 circuit-breaker reconciliation and the R5 share settlement. Multi-week competitions snapshot intermediate progress every Sunday 18:00 but only finalize in the `end_time` week.
 
 ### Weekly Settlement and Macro Evaluation
 
