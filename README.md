@@ -155,27 +155,41 @@ payout      = shares · payout_rate · I[Index_settle ∈ band]
 
 ### R6 阵亡保险
 
-R6 由 Adventure 销售给玩家，承保人是社区金库。保单覆盖死亡、装备损耗与撤离失败。
+R6 由 Adventure 销售给玩家，承保人是社区金库。保单覆盖死亡时丢失的装备价值与未撤离的探索样本价值。同一玩家在同 scope 一周限购 1 张保单，保单生效至本周日 18:00 周结算时点，未理赔随结算到期作废，保费不退。
 
-保费由 `base_rate`、阵亡风险与异变压力指数、玩家近 4 周阵亡率、覆盖比例与社区发展度共同决定。
+保单分三档：
+
+| 档位 | 覆盖比例 | 保费乘数 | 免赔率 |
+| --- | --- | --- | --- |
+| 基础 basic    | 0.50 | 1.0 | 0.30 |
+| 标准 standard | 0.80 | 1.6 | 0.15 |
+| 加强 premium  | 1.00 | 2.4 | 0.05 |
+
+保费乘数凸增让加强档保费溢价超过覆盖比例线性放缩，玩家在风险偏好下作取舍而不无脑选最高档。
+
+保费由阵亡风险指数、scope 异变压力、玩家近 4 周阵亡率、档位与社区发展度共同决定：
 
 ```
-premium = base_rate · (1 + γ_risk · DeathRisk + γ_pressure · Pressure)
-                  · (1 + γ_history · player_death_rate_4w)
-                  · coverage_ratio
-                  · A_community
+premium = base_rate · coverage_premium_multiplier[tier]
+                   · (1 + γ_risk · DeathRiskIndex_norm + γ_pressure · PressureIndex_norm)
+                   · (1 + γ_history · player_death_rate_4w)
+                   · A_community
 ```
 
-覆盖比例 `coverage_ratio` 由档位决定，基础档 0.5、标准档 0.8、加强档 1.0。
-
-赔付按装备金钱估值与未撤离样本损坏率折算。
+赔付按 `PlayerDeathEvent` 即时触发：
 
 ```
-payout = coverage_ratio · ( equipment_loss + sample_loss · sample_value )
-       − deductible
+gross_payout = coverage_ratio[tier] · ( equipment_loss_value + sample_loss_value )
+payout       = max(0, gross_payout · (1 − deductible_ratio[tier])) · prorate_factor
 ```
 
-保费 100% 入社区金库，手续费按 30% 销毁。死亡罚没按 70% 销毁、30% 入社区金库。保单不覆盖玩家主动跳崖、PVP 死亡与离开 scope 后超时死亡。社区金库的总承保敞口按发展度上限做准入校验，超额拒签。
+装备价值与样本价值取 `item-basket` 即时折算金额。拒赔不消耗保单额度且不退保费，包含三种情形：PVP 死亡、主动跳崖（FALL 死亡且坠落高度 ≥ 30 方块且 60 秒内无敌对实体伤害）、scope 外超时死亡（脱离 scope 边界超过 600 秒后阵亡）。
+
+社区金库承保受三层上限约束：单保单赔付额上限 5000 元，同 scope 同社区累计承保 `≤ base_underwriting_cap · A_community · (1 − δ · PressureIndex_norm)`（base = 200000 元，δ = 0.40），社区全局承保 `≤ 0.60 · TreasuryBalance`。金库余额低于 50000 元时该社区停售新保单。
+
+单 scope 单周累计赔付熔断：`ScopePayoutCapWeekly = base_scope_payout_cap · A_community_aggregate · (1 + ε · ProductionIndex_norm)`（base = 80000 元，ε = 0.30）。超过该上限后剩余索赔按 `prorate_factor` 比例赔付，周日 18:00 周结算时按 prorate 重新对账，超付差额下周从相关社区金库扣回。熔断对账在 R5 份额结算前执行。
+
+保费 100% 入社区金库，手续费按 30% 销毁。死亡罚没按 70% 销毁、30% 入社区金库。
 
 ### R7 竞赛奖池
 

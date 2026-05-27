@@ -155,27 +155,41 @@ Position caps come in three layers: per scope per community (`index_position_per
 
 ### R6 Death Insurance
 
-R6 is sold by Adventure to players, underwritten by the community treasury. Policies cover death, equipment loss, and evacuation failure.
+R6 is sold by Adventure to players, underwritten by the community treasury. Policies cover the value of equipment lost on death and unevacuated exploration samples. Each player is limited to one policy per scope per week; policies remain in force until Sunday 18:00 weekly settlement, expiring without refund if no claim is filed.
 
-The premium is determined by `base_rate`, the death risk and anomaly pressure indices, the player's 4-week death rate, the coverage ratio, and community development.
+Policies come in three tiers:
+
+| Tier | Coverage Ratio | Premium Multiplier | Deductible Ratio |
+| --- | --- | --- | --- |
+| basic    | 0.50 | 1.0 | 0.30 |
+| standard | 0.80 | 1.6 | 0.15 |
+| premium  | 1.00 | 2.4 | 0.05 |
+
+The convex premium multiplier makes the enhanced tier's surcharge exceed the linear scaling of coverage ratio, so players pick by risk preference rather than always defaulting to the highest tier.
+
+The premium follows the death-risk index, scope anomaly pressure, the player's 4-week death rate, tier, and community development:
 
 ```
-premium = base_rate · (1 + γ_risk · DeathRisk + γ_pressure · Pressure)
-                  · (1 + γ_history · player_death_rate_4w)
-                  · coverage_ratio
-                  · A_community
+premium = base_rate · coverage_premium_multiplier[tier]
+                   · (1 + γ_risk · DeathRiskIndex_norm + γ_pressure · PressureIndex_norm)
+                   · (1 + γ_history · player_death_rate_4w)
+                   · A_community
 ```
 
-The coverage ratio is determined by tier: basic 0.5, standard 0.8, enhanced 1.0.
-
-Payout is computed from equipment monetary valuation and the damage-rate-adjusted unevacuated sample value.
+Payouts fire on `PlayerDeathEvent`:
 
 ```
-payout = coverage_ratio · ( equipment_loss + sample_loss · sample_value )
-       − deductible
+gross_payout = coverage_ratio[tier] · ( equipment_loss_value + sample_loss_value )
+payout       = max(0, gross_payout · (1 − deductible_ratio[tier])) · prorate_factor
 ```
 
-Premiums credit 100% to the community treasury; the policy fee burns 30%. Death forfeitures burn 70% and credit 30% to the community treasury. Policies do not cover voluntary self-fall, PVP death, or timeout death after leaving the scope. Community-treasury total underwriting exposure is gated by the development-driven cap, with admission validation rejecting over-cap underwriting.
+Equipment and sample values use the live `item-basket` conversion. Claim denials neither consume the policy nor refund the premium, and cover three cases: PVP death, voluntary fall (FALL death with fall height ≥ 30 blocks and no hostile-entity damage event in the prior 60 seconds), and out-of-scope timeout death (death more than `scope_exit_grace_seconds = 600` seconds after leaving the scope boundary).
+
+Community-treasury underwriting is gated by three caps: per-policy payout ≤ 5000 Yuan; per scope per community cumulative underwriting `≤ base_underwriting_cap · A_community · (1 − δ · PressureIndex_norm)` (base = 200000 Yuan, δ = 0.40); community-wide underwriting `≤ 0.60 · TreasuryBalance`. When the treasury falls below 50000 Yuan, that community suspends new policy sales.
+
+Per-scope weekly cumulative payout circuit-breaker: `ScopePayoutCapWeekly = base_scope_payout_cap · A_community_aggregate · (1 + ε · ProductionIndex_norm)` (base = 80000 Yuan, ε = 0.30). Once the cap is exceeded in a week, remaining claims pay at `prorate_factor`; Sunday 18:00 settlement re-prorates, and any overpayment clawback happens automatically against the affected community treasuries the following week. Circuit-breaker reconciliation runs before R5 share settlement.
+
+Premiums credit 100% to the community treasury; the policy fee burns 30%. Death forfeitures burn 70% and credit 30% to the community treasury.
 
 ### R7 Competition Pool
 
