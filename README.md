@@ -128,22 +128,30 @@ research_delta          = sample_value · tier_factor
 
 ### R5 份额结算
 
-R5 是社区金库到社区金库的资金通道。社区在周一至周六下单认购份额，周日 18:00 周结算时按 scope 当周指数终值赔付。
+R5 是社区金库到社区金库的资金通道。社区在周一至周六下单认购份额，周日 18:00 周结算时按 scope 当周指数终值赔付。合约下单后保持到结算，不开平仓与对冲。
 
-合约形态有两类。趋势份额按结算指数与发行价之差线性结算。
+每张合约绑定一个指数 `index_kind ∈ {production, pressure, death_risk, mission_fail}`。同一 scope 同一社区可同时开四种指数的合约。风险类指数（pressure / death_risk / mission_fail）方差更高，房费率上浮 0.03（产出预估 0.05，其余三类 0.08）。
 
-```
-payout = shares · (Index_settle − Index_issue)
-```
-
-区间份额在估计区间内命中固定赔付，未命中作废。
+合约形态分两类。趋势份额绑定看涨或看跌方向，按结算指数与发行价之差线性结算：
 
 ```
-payout = shares · payout_rate · I[Index_settle ∈ range]
-payout_rate = 1 / 估计区间命中概率 · (1 − 房费率)
+subscription_cost = shares · price_issue · margin_ratio
+gross_payout      = shares · direction_sign · (Index_settle − price_issue) · (1 − house_rate)
+net_payout        = max(0, gross_payout + subscription_cost) − subscription_cost
 ```
 
-发行价取上周指数 EMA。份额房费按 50% 销毁。每周对单 scope 单社区的份额持仓总额受 `index_position_per_community_cap` 限制，单社区跨 scope 的持仓总额受 `index_position_total_cap` 限制；两层上限均按社区发展度线性放缩。
+默认 `margin_ratio = 1.00`（满保证金，无杠杆）。盈利时差额扣房费返还金库，亏损时本金已扣相当于亏掉认购成本即止损，金库无需补差。`direction_sign(long) = +1, direction_sign(short) = −1`。
+
+区间份额采用周开盘时预设的五档区间（重挫 / 偏低 / 中间 / 偏高 / 暴涨），边界取近 12 周指数 `empirical_cdf` 的 P10 / P30 / P70 / P90 分位点。社区在五档里选一档下单，不可自定义区间。
+
+```
+payout_rate = (1 − house_rate) / max(P_hit_estimate, P_hit_min)
+payout      = shares · payout_rate · I[Index_settle ∈ band]
+```
+
+默认 `P_hit_min = 0.05` 防止极端档赔率爆炸。发行价取上周指数 EMA。份额房费按 50% 销毁。
+
+持仓上限分三层：单 scope 单社区受 `index_position_per_community_cap` 限制，单社区跨 scope 受 `index_position_total_cap` 限制，同 scope 全社区合计受 `ScopeTotalPositionCap = base_scope_cap · (1 + β · ProductionIndex_norm)` 限制（默认 `base_scope_cap = 1500000, β = 0.5`）。前两层按社区发展度放缩，第三层按 scope 产出指数放缩，防止一片 scope 被群体押注冲击周结算赔付侧。本周开盘后新建的 scope 跳过本周份额市场，下周一并入。
 
 ### R6 阵亡保险
 

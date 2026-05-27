@@ -128,22 +128,30 @@ Research carries three feedback levels. When a player submits samples, Adventure
 
 ### R5 Share Settlement
 
-R5 is a community-treasury-to-community-treasury fund channel. Communities subscribe to shares between Monday and Saturday; Sunday 18:00 weekly settlement pays out at the scope's realized end-of-week index value.
+R5 is a community-treasury-to-community-treasury fund channel. Communities subscribe to shares between Monday and Saturday; Sunday 18:00 weekly settlement pays out at the scope's realized end-of-week index value. Once subscribed, a contract is held to settlement — no closing-out or hedging.
 
-Two contract forms exist. Trend shares settle linearly against the difference between the settlement index and the issue price.
+Each contract binds to one index `index_kind ∈ {production, pressure, death_risk, mission_fail}`. A community may run all four index contracts on the same scope simultaneously. The three risk indices (pressure / death_risk / mission_fail) carry higher variance and pay a 0.03 house-fee premium on top of the base (production at 0.05, the others at 0.08).
 
-```
-payout = shares · (Index_settle − Index_issue)
-```
-
-Range shares pay a fixed amount when the settlement index falls in the estimated range, and are void otherwise.
+Two contract forms exist. Trend shares bind to a long or short direction and settle linearly against the index difference:
 
 ```
-payout = shares · payout_rate · I[Index_settle ∈ range]
-payout_rate = 1 / hit_probability · (1 − house_fee_rate)
+subscription_cost = shares · price_issue · margin_ratio
+gross_payout      = shares · direction_sign · (Index_settle − price_issue) · (1 − house_rate)
+net_payout        = max(0, gross_payout + subscription_cost) − subscription_cost
 ```
 
-The issue price uses the prior week's index EMA. The share-house fee burns 50%. Per scope per community share holdings are capped by `index_position_per_community_cap`; per community total holdings across scopes are capped by `index_position_total_cap`; both caps scale linearly with community development.
+Default `margin_ratio = 1.00` (full collateral, no leverage). On profit, the difference (minus house fee) returns to the treasury; on loss, the principal is already debited and the maximum loss equals the subscription cost — the treasury does not top up. `direction_sign(long) = +1, direction_sign(short) = −1`.
+
+Range shares use five fixed bands published at the Monday open (crash / low / middle / high / surge), with boundaries from the P10 / P30 / P70 / P90 quantiles of the prior 12-week `empirical_cdf`. Communities pick one of the five bands; custom ranges are not allowed.
+
+```
+payout_rate = (1 − house_rate) / max(P_hit_estimate, P_hit_min)
+payout      = shares · payout_rate · I[Index_settle ∈ band]
+```
+
+Default `P_hit_min = 0.05` prevents extreme bands from blowing up the payout rate. The issue price uses the prior week's index EMA. The share-house fee burns 50%.
+
+Position caps come in three layers: per scope per community (`index_position_per_community_cap`), per community across scopes (`index_position_total_cap`), and scope-wide across all communities (`ScopeTotalPositionCap = base_scope_cap · (1 + β · ProductionIndex_norm)`, default `base_scope_cap = 1500000, β = 0.5`). The first two scale with community development; the third scales with scope output index, preventing a single scope from being mass-bet into an unstable payout. Scopes created mid-week skip that week's share market and join the following week.
 
 ### R6 Death Insurance
 
