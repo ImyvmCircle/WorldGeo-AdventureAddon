@@ -1,10 +1,12 @@
 package com.imyvm.adventure.entrypoint.register.event
 
 import com.imyvm.adventure.application.AdventureServices
+import com.imyvm.adventure.application.listener.TradeListener
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 fun registerAdventureEvents() {
     registerAdventureScheduler()
+    TradeListener().register()
 }
 
 private fun registerAdventureScheduler() {
