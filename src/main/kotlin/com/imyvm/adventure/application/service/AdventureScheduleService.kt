@@ -25,6 +25,8 @@ class AdventureScheduleService {
             WorldGeoAdventureAddon.logger.debug("Adventure scheduler heartbeat, tick={}", totalTicks)
         }
 
+        com.imyvm.adventure.application.AdventureServices.rareCacheService.tick(server)
+
         val interval = GameplayConfig.RUNTIME_TICK_CHECK_INTERVAL_TICKS.value.coerceAtLeast(1)
         if (totalTicks % interval.toLong() != 0L) return
 

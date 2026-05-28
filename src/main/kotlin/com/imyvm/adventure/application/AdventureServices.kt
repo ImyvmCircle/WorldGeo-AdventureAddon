@@ -3,6 +3,7 @@ package com.imyvm.adventure.application
 import com.imyvm.adventure.application.service.AdventureScheduleService
 import com.imyvm.adventure.application.service.CommunityBridgeService
 import com.imyvm.adventure.application.service.EconomyBridgeService
+import com.imyvm.adventure.application.service.RareCacheService
 import com.imyvm.adventure.application.service.ScopeResolver
 import com.imyvm.adventure.application.service.WorldGeoBridgeService
 import com.imyvm.adventure.entrypoint.data.ItemBasketLoader
@@ -17,6 +18,8 @@ object AdventureServices {
     lateinit var communityBridgeService: CommunityBridgeService
         private set
     lateinit var economyBridgeService: EconomyBridgeService
+        private set
+    lateinit var rareCacheService: RareCacheService
         private set
     lateinit var scheduleService: AdventureScheduleService
         private set
@@ -41,6 +44,7 @@ object AdventureServices {
         economyBridgeService: EconomyBridgeService,
         scheduleService: AdventureScheduleService,
         scopeResolver: ScopeResolver,
+        rareCacheService: RareCacheService,
         itemBasketLoader: ItemBasketLoader,
         lootWindowsLoader: LootWindowsLoader,
         probeTiersLoader: ProbeTiersLoader,
@@ -52,6 +56,7 @@ object AdventureServices {
         this.economyBridgeService = economyBridgeService
         this.scheduleService = scheduleService
         this.scopeResolver = scopeResolver
+        this.rareCacheService = rareCacheService
         this.itemBasketLoader = itemBasketLoader
         this.lootWindowsLoader = lootWindowsLoader
         this.probeTiersLoader = probeTiersLoader

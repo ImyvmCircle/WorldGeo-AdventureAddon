@@ -170,6 +170,22 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
+        val RARE_CACHE_SPAWN_BASE_PER_TICK = Option(
+            "rare_cache.spawn_base_per_tick",
+            1.0 / (20.0 * 60.0 * 30.0),
+            "per-region per-tick spawn rate base before phase scaling. default expects 30 min mean at full moon."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val RARE_CACHE_DECAY_BASE_PER_TICK = Option(
+            "rare_cache.decay_base_per_tick",
+            1.0 / (20.0 * 60.0 * 90.0),
+            "per-region per-tick decay rate base before inverse phase scaling. default expects 90 min mean at new moon."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
         val OP_BASE_SCORE_AIR_HIT = Option(
             "operation_score.base.air_hit",
             ActionEventType.AIR_HIT.defaultBaseScore,
