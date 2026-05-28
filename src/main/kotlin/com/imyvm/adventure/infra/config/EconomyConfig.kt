@@ -208,6 +208,54 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             "baseScore for a trade event."
         ) { obj, path -> obj.getDouble(path) }
 
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_PROBE = Option(
+            "allowance.fraction.probe",
+            ActionClass.PROBE.defaultAllowanceFraction,
+            "alpha_allowance for probe actions."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_SAMPLE = Option(
+            "allowance.fraction.sample",
+            ActionClass.SAMPLE.defaultAllowanceFraction,
+            "alpha_allowance for sample actions."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_COMBAT = Option(
+            "allowance.fraction.combat",
+            ActionClass.COMBAT.defaultAllowanceFraction,
+            "alpha_allowance for combat actions."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_PUZZLE_VAULT = Option(
+            "allowance.fraction.puzzle_vault",
+            ActionClass.PUZZLE_VAULT.defaultAllowanceFraction,
+            "alpha_allowance for puzzle and vault actions."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_AERIAL = Option(
+            "allowance.fraction.aerial",
+            ActionClass.AERIAL.defaultAllowanceFraction,
+            "alpha_allowance for aerial actions."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ALLOWANCE_FRACTION_LOGISTICS_TRADE = Option(
+            "allowance.fraction.logistics_trade",
+            ActionClass.LOGISTICS_TRADE.defaultAllowanceFraction,
+            "alpha_allowance for logistics and trade actions."
+        ) { obj, path -> obj.getDouble(path) }
+
         fun classWeightFor(actionClass: ActionClass): Double = when (actionClass) {
             ActionClass.PROBE -> OP_CLASS_WEIGHT_PROBE.value
             ActionClass.SAMPLE -> OP_CLASS_WEIGHT_SAMPLE.value
@@ -215,6 +263,15 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             ActionClass.PUZZLE_VAULT -> OP_CLASS_WEIGHT_PUZZLE_VAULT.value
             ActionClass.AERIAL -> OP_CLASS_WEIGHT_AERIAL.value
             ActionClass.LOGISTICS_TRADE -> OP_CLASS_WEIGHT_LOGISTICS_TRADE.value
+        }
+
+        fun allowanceFractionFor(actionClass: ActionClass): Double = when (actionClass) {
+            ActionClass.PROBE -> ALLOWANCE_FRACTION_PROBE.value
+            ActionClass.SAMPLE -> ALLOWANCE_FRACTION_SAMPLE.value
+            ActionClass.COMBAT -> ALLOWANCE_FRACTION_COMBAT.value
+            ActionClass.PUZZLE_VAULT -> ALLOWANCE_FRACTION_PUZZLE_VAULT.value
+            ActionClass.AERIAL -> ALLOWANCE_FRACTION_AERIAL.value
+            ActionClass.LOGISTICS_TRADE -> ALLOWANCE_FRACTION_LOGISTICS_TRADE.value
         }
 
         fun baseScoreFor(eventType: ActionEventType): Double = when (eventType) {

@@ -20,6 +20,12 @@ class ScopeResolver(
     fun resolveForEntity(entity: Entity): ResolvedAdventureLocation? =
         resolveAt(entity.level(), entity.blockPosition())
 
+    fun resolveAdventureLocation(player: ServerPlayer): ResolvedAdventureLocation? {
+        val loc = resolveForPlayer(player) ?: return null
+        val adventureIds = listAdventureRegions().mapTo(HashSet()) { it.numberID }
+        return if (loc.region.numberID in adventureIds) loc else null
+    }
+
     fun getRegion(regionNumberId: Int): Region? =
         worldGeoBridgeService.getRegion(regionNumberId)
 
