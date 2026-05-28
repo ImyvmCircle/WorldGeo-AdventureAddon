@@ -3,6 +3,7 @@ package com.imyvm.adventure.entrypoint.register.event
 import com.imyvm.adventure.application.AdventureServices
 import com.imyvm.adventure.application.listener.CombatListener
 import com.imyvm.adventure.application.listener.ContainerListener
+import com.imyvm.adventure.application.listener.GhastListener
 import com.imyvm.adventure.application.listener.ProbeUseListener
 import com.imyvm.adventure.application.listener.SampleBlockListener
 import com.imyvm.adventure.application.listener.TradeListener
@@ -15,6 +16,7 @@ fun registerAdventureEvents() {
     CombatListener().register()
     SampleBlockListener().register()
     ProbeUseListener().register()
+    GhastListener().register()
 }
 
 private fun registerAdventureScheduler() {

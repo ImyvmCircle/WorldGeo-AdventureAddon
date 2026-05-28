@@ -186,6 +186,14 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
+        val AIR_HAUL_DISTANCE_THRESHOLD = Option(
+            "aerial.air_haul_distance_threshold_blocks",
+            32,
+            "minimum distance in blocks between two air_haul events on the same player."
+        ) { obj, path -> obj.getInt(path) }
+
+        @JvmField
+        @ConfigOption
         val RARE_CACHE_SPAWN_RADIUS = Option(
             "rare_cache.spawn_radius_blocks",
             128,
