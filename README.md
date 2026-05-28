@@ -38,7 +38,7 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 
 社区层面，Community 金库承保玩家保单、出资认购野区指数份额、出资推进研究进度。份额市场按周运行，周一开盘下单，周六锁价，周日按指数结果赔付。研究进度跨越阈值后，整个 Community 在野区行动获得成本折扣与收益加成，并获得一次性金钱与装备包奖励。
 
-每周日傍晚触发周结算。本周冒险所得按动作类别汇总入账，与指数兑现一并折算进玩家钱包；阵亡保险与份额市场依序结算。结算同时生成本周存档与宏观周报。
+每周日傍晚触发周结算。本周冒险所得按动作类别汇总入账，与指数兑现一并折算进玩家钱包；阵亡保险先完成熔断对账，随后结算指数份额市场。结算同时生成本周存档与宏观周报。
 
 ## 机制完整说明
 
@@ -94,7 +94,7 @@ OperationScoreRaw     = Σ_scope PlayerScopeWeekScore
 OperationScore        = min( OperationScoreRaw, Cap_week_player )
 ```
 
-12 种事件按主要交互形态归入 6 大动作类别：`read` 进探测；`sample_block / sample_entity / brush` 进采样；`combat` 进战斗；`puzzle / vault / chest` 进解谜与宝库；`air_hit / air_haul` 进空中分支；`logistics / trade` 进物流贸易。`baseScore` 在 `economy.toml [operation_score]` 配置，`w_class` 在 `[operation_score.class_weight]` 配置（探测=0.6 / 采样=0.8 / 战斗=1.0 / 解谜与宝库=1.2 / 空中分支=1.3 / 物流贸易=0.5），冒险收益结算把高风险窗口的回报溢价推到解谜与宝库、空中分支。
+12 种事件按主要交互形态归入 6 大动作类别：`read` 进探测；`sample_block / sample_entity / brush` 进采样；`combat` 进战斗；`puzzle / vault / chest` 进解谜与宝库；`air_hit / air_haul` 进空中分支；`logistics / trade` 进物流贸易。`baseScore` 在 `economy.toml [operation_score]` 配置，`w_class` 在 `[operation_score.class_weight]` 配置（探测=0.6 / 采样=0.8 / 战斗=1.0 / 解谜与宝库=1.2 / 空中分支=1.3 / 物流贸易=0.7），冒险收益结算把高风险窗口的回报溢价推到解谜与宝库、空中分支，并给地面运输与贸易保留稳定回报。
 
 周获利上限采用 CES 函数。
 
@@ -115,7 +115,7 @@ burn_overflow(p, s)      = (deferred_score · realization_rate − deferred_cash
 burn_unredeemed(s)       = pool_residue_at_week_end(s)
 ```
 
-默认 `immediate_cash_ratio = 0.40`、`base_rate = 0.05` 元/分、`γ_index = 0.40`、`overflow_burn_ratio = 0.50`。兑现率在 `0.05–0.07` 元/分之间随 scope 产出热度浮动。指数兑现池受 scope 周指数兑现总上限 `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)` 截断，超出部分销毁 50%，周末未兑现指数余量销毁 100%。
+默认 `immediate_cash_ratio = 0.60`、`base_rate = 0.05` 元/分、`γ_index = 0.40`、`overflow_burn_ratio = 0.30`。兑现率在 `0.05–0.07` 元/分之间随 scope 产出热度浮动。指数兑现池受 scope 周指数兑现总上限 `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)` 截断，超出部分销毁 30%，周末未兑现指数余量销毁 100%。
 
 冒险收益结算还设两层反操纵硬约束：段级判定与事件级热力衰减。段级硬判定四条独立信号——单点高频（5 分钟窗口内 80% 击杀点落在 4 方块半径立方内）、封闭刷怪（移动凸包面积 / 段时长 < 30 m²/min）、无读数变化（探测与采样类别下读数增量同时为 0）、段长 AFK（事件密度 < 0.5 事件/分钟 且段时长 ≥ 10 分钟）——命中任意一条整段操作分置 0、回退原版掉落、不进 Adventure 资金流。事件级热力衰减按 chunk × 事件类型滚动统计，超出阈值后该类型在该 chunk 内的操作分按几何级数衰减。固定单点高频击杀、封闭刷怪结构、AFK 段沿用原版收益。
 
@@ -132,7 +132,7 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。`af` 把 scope 形态（`desert / aquatic / aerial / underground / forest / plains`）与模板玩法分支（`combat / puzzle / vault / aerial / logistics / trade`）匹配到 0.3–1.5 的系数：对角线匹配抬升直出概率（aerial 模板 × aerial scope = 1.5），远离匹配压制（aerial 模板 × desert scope = 0.4），错配场景仍保留基础概率不归零。矩阵均值约 0.85，不放大全局期望。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
 
-单玩家本周装备产出价值受 `value_per_player_weekly_cap` 限制。装备掉落与研究中心 craft 产出的装备共享同一封顶，按 `item-basket` 折算金额累加；装备掉落触发封顶时容器回退到原版战利品，研究中心 craft 触发封顶时拒绝下单。本周走运抽到高价值直出后 craft 配额自动收紧；反之 craft 配额宽松，让运气派与规划派共享一个产出节奏。
+单玩家本周装备产出价值受两条软封顶限制。装备掉落与研究中心 craft 分别拥有独立预算，按 `item-basket` 折算金额累加；装备掉落超过预算后直出概率递减，研究中心 craft 超过预算后产出效率递减，不直接拒单。直出与 craft 仍共享 scope 热度信号，让运气派与规划派处在同一产出节奏中。
 
 多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段。craft 成本同时受研究 tier 折扣与 scope 直出热度影响：`craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`，默认 `α = 0.30`。scope 本周直出火热时同 scope 同 archetype 装备的 craft 成本最多上浮 30%；scope 直出冷清时 craft 成本回落到基线。研究中心同时开放拆解工位，玩家投入直出装备按 rarity 退回基础/研究/高级材料（低档 0.70、中档 0.60、高档 0.50），把溢出的低档存货流入研究材料池。
 
@@ -140,7 +140,7 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 ### 社区研究
 
-社区研究走单轴累加器。社区金库出资与玩家向研究 NPC 提交样本共用同一进度：
+社区研究走单轴累加器。社区金库出资与玩家通过图书管理员或制图师交易提交样本共用同一进度：
 
 ```
 research_progress(c) += funding + sample_value
@@ -159,7 +159,7 @@ tier 给两个系数：成本折扣 `cost_discount` 与收益加成 `yield_bonus
 
 `cost_discount` 作用于望远镜、指南针、追溯指针、刷子、研究中心提交手续费、份额房费率、保险保费、研究中心 craft 配方材料；`yield_bonus` 作用于冒险收益结算系数、装备掉落概率 `P_direct` 中心值、样本提交即时津贴。两类系数对所有社区成员同步生效。
 
-研究有两类反馈节拍。玩家提交合格样本时即时入账小津贴 `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`，默认 `k_bounty = 0.30`。社区 `research_progress` 越过下一档阈值时在周日 18:00 一次性发放升级奖励：金额 `cash_bonus = α · tier · A_community^β`（默认 `α = 5000, β = 0.60`）入社区金库，同时按 `loot-windows.json` 的 `tier_unlock_bundle.tier{k}` 段发放一袋装备到社区共享库存。同一周内同时越过多档阈值按档数顺序逐档结算。
+研究有两类反馈节拍。玩家提交合格样本时即时入账小津贴 `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`，默认 `k_bounty = 0.30`。社区 `research_progress` 越过下一档阈值时在周日 18:00 一次性发放升级奖励：金额 `cash_bonus = α · tier · A_community^β`（默认 `α = 5000, β = 0.60`）入社区金库，同时按 `loot-windows.json` 的 `tier_unlock_bundle.tier{k}` 段发放一袋装备到社区共享库存。tier 3 以后追加里程碑包，抵消高档研究投入周期。同一周内同时越过多档阈值按档数顺序逐档结算。
 
 ### 指数份额
 
@@ -228,7 +228,7 @@ payout       = max(0, gross_payout · (1 − deductible_ratio[tier])) · prorate
 
 ### 周结算与宏观评估
 
-周日 18:00 启动结算时序，依次完成行动段冻结、社区发展度快照、scope 指数终值、阵亡保险熔断对账与 prorate 扣回、指数份额市场结算、玩家与社区 `Cap_week` 计算、宏观反馈控制器、操作分折算入账、研究里程碑与保险续期处理、周日志归档、cycle 切换。每阶段在事务内完成，任一阶段失败回滚到阶段起点的快照。
+周日 18:00 启动结算时序，依次完成行动段冻结、社区发展度快照、scope 指数终值、阵亡保险熔断对账与 prorate 扣回、指数份额市场结算、玩家与社区 `Cap_week` 计算、宏观反馈控制器、操作分折算入账、研究里程碑、tier 升档、下一周期保险续期、周日志归档、cycle 切换。每阶段在事务内完成，任一阶段失败回滚到阶段起点的快照。
 
 宏观评估采用流量-存量两表加滚动指标。流量表记录本周新增、销毁、流转；存量表记录本周末的玩家钱包总额 M2_player、社区金库总额 M2_community、在线物品折算总值 item_stock。滚动指标按周末计算。
 
@@ -241,7 +241,7 @@ CRR 目标值 0.6。CRR 区间设五级告警：低于 0.4 红色社区流动性
 
 宏观反馈环分三层。第一层公式内反向调节，PressureIndex、DeathRiskIndex、CRR 直接出现在冒险收益、指数份额、阵亡保险的当周公式中，事件 tick 即生效：冒险收益兑现率乘 `(1 − μ_pressure · PressureIndex_norm)`、指数份额区间宽度按 `(1 + ξ_band · |CRR − 0.6|)` 扩张、阵亡保险保费按 PressureIndex 与 DeathRiskIndex 上浮且承保上限按 PressureIndex 收紧。默认 `μ_pressure = 0.30`、`ξ_band = 0.50`，系数集中在 `economy.toml [macro_feedback]`。
 
-第二层自动微调器（autopilot）按 `settlement.toml [autopilot]` 段开关，默认关闭。开启后周日 18:00 `compute_macro_feedback` 子阶段算出 CRR / PressureIndex / DeathRiskIndex 全局误差，按 `Δratio = gain · error` 调节三个白名单参数：`realization.base_rate`（CRR 反馈）、`shares.base_pos_per_scope`（PressureIndex 反馈）、`insurance.base_rate`（DeathRiskIndex 反馈）。单参数单周变化封顶 ±2%，硬边界 `[初值·0.5, 初值·2.0]`，越界冻结并红色告警。所有 autopilot 调整写 `economy_adjust(source="autopilot")` 表，24 小时内可由管理员命令回滚。autopilot 关闭时仍把"建议参数包"写入周报与 `tune_suggestion` 表，等待人工应用。
+第二层自动微调器（autopilot）按 `settlement.toml [autopilot]` 段开关，默认关闭。开启后周日 18:00 `compute_macro_feedback` 子阶段算出 CRR / PressureIndex / DeathRiskIndex 全局误差，按 `Δratio = gain · error` 调节三个白名单参数：`realization.base_rate`（CRR 反馈）、`shares.base_pos_per_scope`（PressureIndex 反馈）、`insurance.base_rate`（DeathRiskIndex 反馈）。误差绝对值超过 0.15 时单参数周变化封顶 5%，误差低于 0.05 时封顶 1%，其余区间封顶 2%；硬边界 `[初值·0.5, 初值·2.0]`，越界冻结并红色告警。所有 autopilot 调整写 `economy_adjust(source="autopilot")` 表，24 小时内可由管理员命令回滚。autopilot 关闭时仍把"建议参数包"写入周报与 `tune_suggestion` 表，等待人工应用。
 
 第三层管理员游戏内命令是最高权限层，详见下文 `/adventure tune` 命令族。
 
