@@ -1,6 +1,6 @@
 # WorldGeo-AdventureAddon
 
-WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的野区玩法层。Adventure 把地理事实、社区金库与玩家的现场行为接成一个投入-产出环路。玩家在 GeoScope 内的探测、战斗、解谜、容器、运输、交易六类行为产生操作分；操作分与现场产出进入行动津贴、冒险收益、装备掉落、社区研究、指数份额、阵亡保险六类机制；社区把资金投回研究、份额与保险，反作用于下周区域的产出节奏与玩家选择。野区产出节奏跟随 Minecraft 月相日波动，满月与近满月日开放探测与空中运输的全权重计分，其余月相日仅记现场证据。
+WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的野区玩法层。Adventure 把地理事实、社区金库与玩家的现场行为接成一个投入-产出环路。玩家在 GeoScope 内的探测、采样、战斗、宝藏、空中、贸易六类行为产生操作分；操作分与现场产出进入行动津贴、冒险收益、装备掉落、社区研究、指数份额、阵亡保险六类机制；社区把资金投回研究、份额与保险，反作用于下周区域的产出节奏与玩家选择。野区产出节奏跟随 Minecraft 月相日波动，满月与近满月日开放探测与空中运输的全权重计分，其余月相日仅记现场证据。
 
 服务端时区采用 Asia/Shanghai。周日 18:00 触发周结算。
 
@@ -32,7 +32,7 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 
 进入野区即开启一段冒险。区域公告展示当日月相、产出、压力、风险与任务失败四项指数，并标明当日开放的专属行为。野区氛围与效果随月相切换。
 
-野区行为分为探测、采样、战斗、解谜与容器、空中分支、地面运输与贸易六类。探测以望远镜读数为主，指南针与追溯指针承担辅助定位；采样以刷子、可疑沙、可疑沙砾与指定实体掉落承载；空中分支由带挽具的乐魂承载，骑手命中与拴绳吊运分别计入空中收益。探测与空中分支仅在满月与近满月日记入收益，其他月相日仅留存现场记录。其余四类在所有月相日均计入收益。每个动作即时入账小额行动津贴，并按当日月相强弱与近期热度折算为操作分。容器开启直接掉落装备，向图书管理员或制图师提交样本推进社区研究进度。
+野区行为分为探测、采样、战斗、宝藏、空中分支、地面运输与贸易六类。探测以望远镜读数为主，指南针与追溯指针承担辅助定位；采样以刷子、可疑沙、可疑沙砾与指定实体掉落承载；空中分支由带挽具的乐魂承载，骑手命中与拴绳吊运分别计入空中收益。探测与空中分支仅在满月与近满月日记入收益，其他月相日仅留存现场记录。其余四类在所有月相日均计入收益。每个动作即时入账小额行动津贴，并按当日月相强弱与近期热度折算为操作分。宝藏类涵盖野外容器开启与系统刷出的稀有宝箱开启两种事件，向图书管理员或制图师提交样本推进社区研究进度。
 
 玩家自主选择撤离时机。携带样本、拴绳货物或载具返回撤离点或 Community 区域即完成本段冒险，途中掉落与死亡会损耗样本完整度，抵达终点后本段记录锁定。死亡触发阵亡保险，按保单等级赔付玩家损失，未撤离样本按损耗折入保险事故。
 
@@ -80,7 +80,7 @@ WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的�
 ActionAllowance(event) = α_allowance[class] · baseScore[event.type] · w_class[class] · phase_weight · (1 − heat_penalty)
 ```
 
-`α_allowance` 按动作类别配置，物流贸易给 0.30 反映“小、快、即时落袋”，解谜与宝库给 0.20 反映高风险窗口，战斗与空中分支给 0.10，采样给 0.05，探测给 0.10。行动津贴与冒险收益结算共用反操纵筛子：行动段命中段级硬判定时行动津贴一并归 0；事件 5 分钟滚动窗口内同 chunk 同事件类型超过 `heat_threshold_kills_per_minute = 8` 时按 `heat_penalty = 1 − 0.5^(excess/threshold)` 软衰减。行动津贴在事件即时入钱包，不参与冒险收益的双轨兑现、不参与周结算 CES 折算、不销毁。
+`α_allowance` 按动作类别配置，物流贸易给 0.30 反映“小、快、即时落袋”，宝藏给 0.20 反映高风险窗口，战斗与空中分支给 0.10，采样给 0.05，探测给 0.10。行动津贴与冒险收益结算共用反操纵筛子：行动段命中段级硬判定时行动津贴一并归 0；事件 5 分钟滚动窗口内同 chunk 同事件类型超过 `heat_threshold_kills_per_minute = 8` 时按 `heat_penalty = 1 − 0.5^(excess/threshold)` 软衰减。行动津贴在事件即时入钱包，不参与冒险收益的双轨兑现、不参与周结算 CES 折算、不销毁。
 
 ### 冒险收益结算
 
@@ -94,7 +94,7 @@ OperationScoreRaw     = Σ_scope PlayerScopeWeekScore
 OperationScore        = min( OperationScoreRaw, Cap_week_player )
 ```
 
-12 种事件按主要交互形态归入 6 大动作类别：`read` 进探测；`sample_block / sample_entity / brush` 进采样；`combat` 进战斗；`puzzle / vault / chest` 进解谜与宝库；`air_hit / air_haul` 进空中分支；`logistics / trade` 进物流贸易。`baseScore` 在 `economy.toml [operation_score]` 配置，`w_class` 在 `[operation_score.class_weight]` 配置（探测=0.6 / 采样=0.8 / 战斗=1.0 / 解谜与宝库=1.2 / 空中分支=1.3 / 物流贸易=0.7），冒险收益结算把高风险窗口的回报溢价推到解谜与宝库、空中分支，并给地面运输与贸易保留稳定回报。
+11 种事件按主要交互形态归入 6 大动作类别：`read` 进探测；`sample_block / sample_entity / brush` 进采样；`combat` 进战斗；`chest / rare_cache` 进宝藏；`air_hit / air_haul` 进空中分支；`logistics / trade` 进物流贸易。`baseScore` 在 `economy.toml [operation_score]` 配置，`chest` 取 1.0 反映野外普通容器，`rare_cache` 取 8.0 反映系统刷出的稀有宝箱。`w_class` 在 `[operation_score.class_weight]` 配置（探测=0.6 / 采样=0.8 / 战斗=1.0 / 宝藏=1.2 / 空中分支=1.3 / 物流贸易=0.7），冒险收益结算把高风险窗口的回报溢价推到宝藏、空中分支，并给地面运输与贸易保留稳定回报。
 
 周获利上限采用 CES 函数。
 
@@ -130,13 +130,35 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
                 p_max · phase_weight · af)
 ```
 
-默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。`af` 把 scope 形态（`desert / aquatic / aerial / underground / forest / plains`）与模板玩法分支（`combat / puzzle / vault / aerial / logistics / trade`）匹配到 0.3–1.5 的系数：对角线匹配抬升直出概率（aerial 模板 × aerial scope = 1.5），远离匹配压制（aerial 模板 × desert scope = 0.4），错配场景仍保留基础概率不归零。矩阵均值约 0.85，不放大全局期望。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
+默认 `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`。`af` 把 scope 形态（`desert / aquatic / aerial / underground / forest / plains`）与模板玩法分支（`combat / cache / aerial / logistics / trade`）匹配到 0.3–1.5 的系数：对角线匹配抬升直出概率（aerial 模板 × aerial scope = 1.5），远离匹配压制（aerial 模板 × desert scope = 0.4），错配场景仍保留基础概率不归零。矩阵均值约 0.85，不放大全局期望。直出物品在 `loot-windows.json` 的 `direct_equipment` 段配置，条目标注 `rarity` 与 `min_norm`，抽奖时按 `ProductionIndex_norm ≥ min_norm` 过滤后再按 `weight` 加权抽取。低档物品（`min_norm = 0`）在所有月相日可抽，中档（`min_norm = 0.35`）在半月以上开放，高档（`min_norm = 0.70`）在近满月以上开放。
 
 单玩家本周装备产出价值受两条软封顶限制。装备掉落与研究中心 craft 分别拥有独立预算，按 `item-basket` 折算金额累加；装备掉落超过预算后直出概率递减，研究中心 craft 超过预算后产出效率递减，不直接拒单。直出与 craft 仍共享 scope 热度信号，让运气派与规划派处在同一产出节奏中。
 
 多材料兑换走研究中心，配方在 `loot-windows.json` 的 `craft_recipe` 段。craft 成本同时受研究 tier 折扣与 scope 直出热度影响：`craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`，默认 `α = 0.30`。scope 本周直出火热时同 scope 同 archetype 装备的 craft 成本最多上浮 30%；scope 直出冷清时 craft 成本回落到基线。研究中心同时开放拆解工位，玩家投入直出装备按 rarity 退回基础/研究/高级材料（低档 0.70、中档 0.60、高档 0.50），把溢出的低档存货流入研究材料池。
 
 `sky_ghast` 模板对空中分支声明独立参数，把 `phase_weight` 钳到 0.40 下限，让新月日的空中容器仍享受半月等效的概率窗口，反映乐魂养护成本带来的稀缺加成。
+
+### 稀有宝箱
+
+稀有宝箱在 ADVENTURE 区域内按月相驱动随机出现与消失，承载兑换券、装备直出、行动津贴、操作分四类正反馈。每个 ADVENTURE 区域同时最多存在 1 个活跃稀有宝箱，全服活跃总数等于活跃区域数。
+
+每个 tick 对未持有活跃宝箱的区域独立判定生成，对持有活跃宝箱的区域独立判定消失：
+
+```
+P_spawn(region, tick)  = spawn_base · phase_weight
+P_decay(region, tick)  = decay_base · (1 − phase_weight)
+```
+
+默认 `spawn_base = 1 / (20 · 60 · 30)`、`decay_base = 1 / (20 · 60 · 90)`，即满月日单区域期望 30 分钟刷新一次、新月日期望 90 分钟自然消失。
+
+生成时在区域内随机选可放置地面坐标，从 `cache_carrier_pool` 中随机一种容器方块（`minecraft:chest / minecraft:trapped_chest / minecraft:barrel / minecraft:shulker_box / minecraft:decorated_pot` 等），漏斗禁止入池。容器写入 `adventure:rare_cache` loot_table，含兑换券（接入研究中心兑换系统）与按月相窗口浮动的装备直出条目。
+
+生成与消失同时向全服广播，广播体含：
+- 区域名
+- 坐标范围：`x ∈ [floor(x/100)·100, floor(x/100)·100 + 100)`、`z ∈ [floor(z/100)·100, floor(z/100)·100 + 100)`
+- 生物群系
+
+玩家开启该容器触发 `rare_cache` 事件，行动津贴与操作分按宝藏类 α=0.20、`baseScore=8.0`、`w_class=1.2` 走标准公式。容器开启或自然消失时清场，立即解锁该区域的下次生成判定。
 
 ### 社区研究
 
@@ -281,6 +303,6 @@ Adventure 服务端进程在 Fabric 入口启动后绑定七个对外可观察�
 
 `/adventure tune` 命令族需 OP 等级 ≥ 4，所有执行结果写入 `economy_adjust` 操作日志，`source` 字段区分 `autopilot / manual / rollback / suggestion_apply`。命令前对白名单参数与硬边界做校验，越界拒绝并红色提示。
 
-管理员可热更的配置面分两类。参数权重以 toml 文件维护，覆盖经济参数、指数权重、研究阈值、保险参数与结算参数。产出内容以 json 文件维护，覆盖物品篮折算系数、样本白名单、容器装备直出与解谜配置、读数工具档位、scope 效果模板。形态属于代码层不可热更的数学公式集中在指数引擎、周结算系统与宏观反馈控制器内部。
+管理员可热更的配置面分两类。参数权重以 toml 文件维护，覆盖经济参数、指数权重、研究阈值、保险参数与结算参数。产出内容以 json 文件维护，覆盖物品篮折算系数、样本白名单、容器装备直出与稀有宝箱配置、读数工具档位、scope 效果模板。形态属于代码层不可热更的数学公式集中在指数引擎、周结算系统与宏观反馈控制器内部。
 
 Adventure 自身持久化所有派生表，包括 cycle、scope 指数快照、行动段、操作分账本、现场目标、份额持仓、保单、研究进度、资金流向、宏观指标、调参日志与建议参数包。社区金库的出入账通过 `CommunityApi.deposit` 与 `CommunityApi.withdraw` 即时执行，跨仓库资金动作使用 Adventure 生成的幂等 ID 自查避免重发。
