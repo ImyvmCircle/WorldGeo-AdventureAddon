@@ -1,6 +1,7 @@
 package com.imyvm.adventure.application.service
 
 import com.imyvm.adventure.WorldGeoAdventureAddon
+import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.infra.AdventureDatabase
 import com.imyvm.adventure.infra.config.AdventureConfig
 import com.imyvm.adventure.infra.config.GameplayConfig
@@ -30,6 +31,7 @@ class AdventureScheduleService {
         val now = nowInZone()
         checkDayFlip(now, server)
         checkWeeklySettlement(now, server)
+        MoonPhase.ensureFresh(server)
     }
 
     fun totalTicks(): Long = totalTicks

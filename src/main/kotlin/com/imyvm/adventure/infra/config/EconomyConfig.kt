@@ -53,5 +53,13 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             0.85,
             "break-even ratio for the community weekly cap."
         ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val MOON_PHASE_WEIGHTS = Option(
+            "moon_phase.phase_weights",
+            listOf(1.0, 0.7, 0.4, 0.2, 0.1, 0.2, 0.4, 0.7),
+            "phase_weight multiplier indexed by Minecraft moon phase 0..7."
+        ) { obj, path -> obj.getDoubleList(path).map { it.toDouble() } }
     }
 }

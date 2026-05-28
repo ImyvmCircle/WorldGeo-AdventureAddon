@@ -25,5 +25,21 @@ class GameplayConfig : HokiConfig("AdventureGameplay.conf") {
         ) { obj, path ->
             obj.getInt(path)
         }
+
+        @JvmField
+        @ConfigOption
+        val MOON_PHASE_REFRESH_SECONDS = Option(
+            "moon_phase.refresh_seconds",
+            60,
+            "minimum seconds between two MoonPhase reads from the overworld."
+        ) { obj, path -> obj.getInt(path) }
+
+        @JvmField
+        @ConfigOption
+        val MOON_PHASE_PROBE_AERIAL_SCORING_MASK = Option(
+            "moon_phase.probe_aerial_scoring_mask",
+            listOf(true, true, false, false, false, false, false, true),
+            "whether probe and aerial actions score for each Minecraft moon phase 0..7."
+        ) { obj, path -> obj.getBooleanList(path).map { it } }
     }
 }
