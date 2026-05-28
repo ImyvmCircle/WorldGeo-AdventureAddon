@@ -7,6 +7,7 @@ import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.domain.model.ActionClass
 import com.imyvm.adventure.domain.model.ActionEventType
 import com.imyvm.adventure.infra.config.EconomyConfig
+import net.minecraft.server.level.ServerLevel
 
 class ContainerListener {
     fun register() {
@@ -14,13 +15,16 @@ class ContainerListener {
             val location = AdventureServices.scopeResolver.resolveAdventureLocation(player)
             if (location == null) {
                 WorldGeoAdventureAddon.logger.debug(
-                    "[adventure.chest] player={} outside adventure scope",
+                    "[adventure.cache] player={} outside adventure scope",
                     player.scoreboardName
                 )
                 return@register
             }
 
-            val eventType = ActionEventType.CHEST
+            val level = player.level() as? ServerLevel
+            val isRareCache = level != null &&
+                AdventureServices.rareCacheService.activeAt(level, container.blockPos) != null
+            val eventType = if (isRareCache) ActionEventType.RARE_CACHE else ActionEventType.CHEST
             val actionClass = ActionClass.CACHE
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
@@ -32,7 +36,8 @@ class ContainerListener {
             val deposited = AdventureServices.economyBridgeService.deposit(player, amount)
 
             WorldGeoAdventureAddon.logger.info(
-                "[adventure.chest] player={} region={} lootTable={} pos={} alpha={} base={} cw={} pw={} hp={} allowance={} amount={} deposited={}",
+                "[adventure.cache] event={} player={} region={} lootTable={} pos={} alpha={} base={} cw={} pw={} hp={} allowance={} amount={} deposited={}",
+                eventType.configKey,
                 player.scoreboardName,
                 location.region.name,
                 container.lootTable,
