@@ -186,6 +186,14 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
+        val RARE_CACHE_SPAWN_RADIUS = Option(
+            "rare_cache.spawn_radius_blocks",
+            128,
+            "radius in blocks around the anchor player within which a rare cache may spawn."
+        ) { obj, path -> obj.getInt(path) }
+
+        @JvmField
+        @ConfigOption
         val OP_BASE_SCORE_AIR_HIT = Option(
             "operation_score.base.air_hit",
             ActionEventType.AIR_HIT.defaultBaseScore,

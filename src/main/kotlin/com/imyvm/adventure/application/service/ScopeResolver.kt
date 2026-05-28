@@ -4,6 +4,7 @@ import com.imyvm.iwg.domain.Region
 import com.imyvm.iwg.domain.component.GeoScope
 import com.imyvm.iwg.inter.api.RegionDataApi
 import net.minecraft.core.BlockPos
+import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
@@ -34,6 +35,9 @@ class ScopeResolver(
 
     fun listAdventureRegions(): List<Region> =
         RegionDataApi.getRegionListFiltered(ADVENTURE_REGION_MARK)
+
+    fun listOnlinePlayersInAdventure(server: MinecraftServer): List<ServerPlayer> =
+        server.playerList.players.filter { resolveAdventureLocation(it) != null }
 
     companion object {
         const val ADVENTURE_REGION_MARK: Int = 1
