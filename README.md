@@ -1,6 +1,6 @@
 # WorldGeo-AdventureAddon
 
-WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的野区玩法层。Adventure 把地理事实、社区金库与玩家的现场行为接成一个投入-产出环路。玩家在 GeoScope 内的探测、采样、战斗、宝藏、空中、贸易六类行为产生操作分；操作分与现场产出进入行动津贴、冒险收益、装备掉落、社区研究、指数份额、阵亡保险六类机制；社区把资金投回研究、份额与保险，反作用于下周区域的产出节奏与玩家选择。野区产出节奏跟随 Minecraft 月相日波动，满月与近满月日开放探测与空中运输的全权重计分，其余月相日仅记现场证据。
+WorldGeo-AdventureAddon 是 IMYVMWorldGeo 与 WorldGeo-CommunityAddon 之上的野区玩法层。Adventure 把地理事实、社区金库与玩家的现场行为接成一个投入-产出环路。玩家在 GeoScope 内的探测、采样、战斗、宝藏、空中、贸易六类行为产生操作分；操作分与现场产出进入行动津贴、冒险收益、装备掉落、社区研究、指数份额、阵亡保险六类机制；社区把资金投回研究、份额与保险，反作用于下周区域的产出节奏与玩家选择。野区产出节奏跟随 Minecraft 月相日波动，所有动作类的津贴与操作分按当日月相权重折算，探测与空中分支对月相弹性更大。
 
 服务端时区采用 Asia/Shanghai。周日 18:00 触发周结算。
 
