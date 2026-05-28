@@ -3,7 +3,8 @@
 	"package": "com.imyvm.adventure.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"MerchantResultSlotMixin"
+		"MerchantResultSlotMixin",
+		"RandomizableContainerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
