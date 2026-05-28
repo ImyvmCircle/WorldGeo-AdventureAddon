@@ -15,5 +15,15 @@ class GameplayConfig : HokiConfig("AdventureGameplay.conf") {
         ) { obj, path ->
             obj.getInt(path)
         }
+
+        @JvmField
+        @ConfigOption
+        val RUNTIME_TICK_CHECK_INTERVAL_TICKS = Option(
+            "runtime.tick_check_interval_ticks",
+            20,
+            "ticks between wall-clock checks driving day flip and weekly settlement."
+        ) { obj, path ->
+            obj.getInt(path)
+        }
     }
 }
