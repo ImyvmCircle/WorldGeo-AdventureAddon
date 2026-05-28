@@ -29,6 +29,7 @@
 		"fabric-api": "*",
 		"fabric-language-kotlin": "*",
 		"hoki": "*",
+		"imyvm_economy": "*",
 		"imyvmworldgeo": "*",
 		"community": "*"
 	}

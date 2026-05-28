@@ -3,6 +3,7 @@ package com.imyvm.adventure.application
 import com.imyvm.adventure.WorldGeoAdventureAddon
 import com.imyvm.adventure.application.service.AdventureScheduleService
 import com.imyvm.adventure.application.service.CommunityBridgeService
+import com.imyvm.adventure.application.service.EconomyBridgeService
 import com.imyvm.adventure.application.service.ScopeResolver
 import com.imyvm.adventure.application.service.WorldGeoBridgeService
 import com.imyvm.adventure.entrypoint.data.ItemBasketLoader
@@ -67,12 +68,14 @@ object AdventureBootstrap {
     private fun bindServices() {
         val worldGeoBridgeService = WorldGeoBridgeService()
         val communityBridgeService = CommunityBridgeService()
+        val economyBridgeService = EconomyBridgeService()
         val scheduleService = AdventureScheduleService()
         val scopeResolver = ScopeResolver(worldGeoBridgeService)
 
         AdventureServices.bind(
             worldGeoBridgeService = worldGeoBridgeService,
             communityBridgeService = communityBridgeService,
+            economyBridgeService = economyBridgeService,
             scheduleService = scheduleService,
             scopeResolver = scopeResolver,
             itemBasketLoader = itemBasketLoader,

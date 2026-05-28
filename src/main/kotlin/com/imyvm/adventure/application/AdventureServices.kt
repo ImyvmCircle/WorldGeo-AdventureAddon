@@ -2,6 +2,7 @@ package com.imyvm.adventure.application
 
 import com.imyvm.adventure.application.service.AdventureScheduleService
 import com.imyvm.adventure.application.service.CommunityBridgeService
+import com.imyvm.adventure.application.service.EconomyBridgeService
 import com.imyvm.adventure.application.service.ScopeResolver
 import com.imyvm.adventure.application.service.WorldGeoBridgeService
 import com.imyvm.adventure.entrypoint.data.ItemBasketLoader
@@ -14,6 +15,8 @@ object AdventureServices {
     lateinit var worldGeoBridgeService: WorldGeoBridgeService
         private set
     lateinit var communityBridgeService: CommunityBridgeService
+        private set
+    lateinit var economyBridgeService: EconomyBridgeService
         private set
     lateinit var scheduleService: AdventureScheduleService
         private set
@@ -35,6 +38,7 @@ object AdventureServices {
     fun bind(
         worldGeoBridgeService: WorldGeoBridgeService,
         communityBridgeService: CommunityBridgeService,
+        economyBridgeService: EconomyBridgeService,
         scheduleService: AdventureScheduleService,
         scopeResolver: ScopeResolver,
         itemBasketLoader: ItemBasketLoader,
@@ -45,6 +49,7 @@ object AdventureServices {
     ) {
         this.worldGeoBridgeService = worldGeoBridgeService
         this.communityBridgeService = communityBridgeService
+        this.economyBridgeService = economyBridgeService
         this.scheduleService = scheduleService
         this.scopeResolver = scopeResolver
         this.itemBasketLoader = itemBasketLoader
