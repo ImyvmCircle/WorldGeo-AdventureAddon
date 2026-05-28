@@ -13,9 +13,9 @@ applyTo: "**"
 
 ## 专项规则
 
-- `design-iteration.instructions.md`：`design/analysis/` 时间戳分析文的内部迭代与归档规则。
 - `minecraft-i18n.instructions.md`：玩家可见文本、语言文件和 MessageFormat。
 - `configuration-persistence.instructions.md`：配置类、具体数值和数据库维护。
 - `commands-suggestions.instructions.md`：命令注册和非 ASCII 名称建议。
 - `documentation-validation.instructions.md`：README、changelog、git、测试和 IMYVMWorldGeo API。
+- `analysis-iteration.instructions.md`：分析、批判、方向比较和阶段判断的五轮迭代规则。
 - `player-documentation-perspective.instructions.md`：README 的用户侧机制文档视角。

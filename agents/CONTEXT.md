@@ -6,13 +6,13 @@
 
 1. 本文件。
 2. 产出或改写正式文字时读取 `agents/WRITING_STYLE.md`，并完整执行其第四节写后链路；缺标题审定、机械扫描、人工判退、CV/TTR 或 AIGC-X 段落结果，任务未完成。
-3. 在 `design/analysis/` 下新增或改写分析文时读取 `agents/instructions/design-iteration.instructions.md`。
+3. 在 `design/analysis/` 下新增或改写分析文时读取 `agents/instructions/analysis-iteration.instructions.md`。
 4. 执行开发任务时读取 `agents/instructions/development.instructions.md`。
 5. 按开发规则索引读取相关专项 instruction。
 
 ## 本项目专有规则
 
-1. 执行修改任务前先检查远端仓库主分支状态，并在不发生冲突时尽可能同步；冲突交由用户裁决。
+1. 执行修改任务前先检查远端仓库主分支状态，并在不发生冲突时尽可能同步；存在冲突时先询问。
 2. 不主动使用 git；prompt 要求 git、提交、推送、拉取或发布时，先同步远端再操作。
 3. 原则上不新建 class，不添加 comments，除非 prompt 要求。
 
