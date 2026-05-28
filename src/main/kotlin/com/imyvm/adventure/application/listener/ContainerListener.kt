@@ -21,7 +21,7 @@ class ContainerListener {
             }
 
             val eventType = ActionEventType.CHEST
-            val actionClass = ActionClass.PUZZLE_VAULT
+            val actionClass = ActionClass.CACHE
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)

@@ -6,7 +6,7 @@ import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.domain.model.ActionClass
 import com.imyvm.adventure.domain.model.ActionEventType
 import com.imyvm.adventure.infra.config.EconomyConfig
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLivingEntityEvents
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 

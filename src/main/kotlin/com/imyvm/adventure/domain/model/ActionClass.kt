@@ -8,7 +8,7 @@ enum class ActionClass(
     PROBE("probe", 0.6, 0.10),
     SAMPLE("sample", 0.8, 0.05),
     COMBAT("combat", 1.0, 0.10),
-    PUZZLE_VAULT("puzzle_vault", 1.2, 0.20),
+    CACHE("cache", 1.2, 0.20),
     AERIAL("aerial", 1.3, 0.10),
     LOGISTICS_TRADE("logistics_trade", 0.7, 0.30);
 

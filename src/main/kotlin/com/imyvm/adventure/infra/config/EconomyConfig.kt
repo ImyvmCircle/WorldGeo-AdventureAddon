@@ -90,10 +90,10 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
-        val OP_CLASS_WEIGHT_PUZZLE_VAULT = Option(
-            "operation_score.class_weight.puzzle_vault",
-            ActionClass.PUZZLE_VAULT.defaultWeight,
-            "w_class multiplier for puzzle and vault actions."
+        val OP_CLASS_WEIGHT_CACHE = Option(
+            "operation_score.class_weight.cache",
+            ActionClass.CACHE.defaultWeight,
+            "w_class multiplier for cache actions."
         ) { obj, path -> obj.getDouble(path) }
 
         @JvmField
@@ -154,26 +154,18 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
-        val OP_BASE_SCORE_PUZZLE = Option(
-            "operation_score.base.puzzle",
-            ActionEventType.PUZZLE.defaultBaseScore,
-            "baseScore for a puzzle event."
-        ) { obj, path -> obj.getDouble(path) }
-
-        @JvmField
-        @ConfigOption
-        val OP_BASE_SCORE_VAULT = Option(
-            "operation_score.base.vault",
-            ActionEventType.VAULT.defaultBaseScore,
-            "baseScore for a vault event."
-        ) { obj, path -> obj.getDouble(path) }
-
-        @JvmField
-        @ConfigOption
         val OP_BASE_SCORE_CHEST = Option(
             "operation_score.base.chest",
             ActionEventType.CHEST.defaultBaseScore,
             "baseScore for a chest event."
+        ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val OP_BASE_SCORE_RARE_CACHE = Option(
+            "operation_score.base.rare_cache",
+            ActionEventType.RARE_CACHE.defaultBaseScore,
+            "baseScore for a rare_cache event."
         ) { obj, path -> obj.getDouble(path) }
 
         @JvmField
@@ -234,10 +226,10 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
 
         @JvmField
         @ConfigOption
-        val ALLOWANCE_FRACTION_PUZZLE_VAULT = Option(
-            "allowance.fraction.puzzle_vault",
-            ActionClass.PUZZLE_VAULT.defaultAllowanceFraction,
-            "alpha_allowance for puzzle and vault actions."
+        val ALLOWANCE_FRACTION_CACHE = Option(
+            "allowance.fraction.cache",
+            ActionClass.CACHE.defaultAllowanceFraction,
+            "alpha_allowance for cache actions."
         ) { obj, path -> obj.getDouble(path) }
 
         @JvmField
@@ -260,7 +252,7 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             ActionClass.PROBE -> OP_CLASS_WEIGHT_PROBE.value
             ActionClass.SAMPLE -> OP_CLASS_WEIGHT_SAMPLE.value
             ActionClass.COMBAT -> OP_CLASS_WEIGHT_COMBAT.value
-            ActionClass.PUZZLE_VAULT -> OP_CLASS_WEIGHT_PUZZLE_VAULT.value
+            ActionClass.CACHE -> OP_CLASS_WEIGHT_CACHE.value
             ActionClass.AERIAL -> OP_CLASS_WEIGHT_AERIAL.value
             ActionClass.LOGISTICS_TRADE -> OP_CLASS_WEIGHT_LOGISTICS_TRADE.value
         }
@@ -269,7 +261,7 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             ActionClass.PROBE -> ALLOWANCE_FRACTION_PROBE.value
             ActionClass.SAMPLE -> ALLOWANCE_FRACTION_SAMPLE.value
             ActionClass.COMBAT -> ALLOWANCE_FRACTION_COMBAT.value
-            ActionClass.PUZZLE_VAULT -> ALLOWANCE_FRACTION_PUZZLE_VAULT.value
+            ActionClass.CACHE -> ALLOWANCE_FRACTION_CACHE.value
             ActionClass.AERIAL -> ALLOWANCE_FRACTION_AERIAL.value
             ActionClass.LOGISTICS_TRADE -> ALLOWANCE_FRACTION_LOGISTICS_TRADE.value
         }
@@ -280,9 +272,8 @@ class EconomyConfig : HokiConfig("AdventureEconomy.conf") {
             ActionEventType.SAMPLE_ENTITY -> OP_BASE_SCORE_SAMPLE_ENTITY.value
             ActionEventType.BRUSH -> OP_BASE_SCORE_BRUSH.value
             ActionEventType.COMBAT -> OP_BASE_SCORE_COMBAT.value
-            ActionEventType.PUZZLE -> OP_BASE_SCORE_PUZZLE.value
-            ActionEventType.VAULT -> OP_BASE_SCORE_VAULT.value
             ActionEventType.CHEST -> OP_BASE_SCORE_CHEST.value
+            ActionEventType.RARE_CACHE -> OP_BASE_SCORE_RARE_CACHE.value
             ActionEventType.AIR_HIT -> OP_BASE_SCORE_AIR_HIT.value
             ActionEventType.AIR_HAUL -> OP_BASE_SCORE_AIR_HAUL.value
             ActionEventType.LOGISTICS -> OP_BASE_SCORE_LOGISTICS.value
