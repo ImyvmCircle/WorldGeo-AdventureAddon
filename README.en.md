@@ -32,7 +32,7 @@ The wilderness is the high-risk geographic space defined by IMYVMWorldGeo. Playe
 
 Entering the wilderness opens an adventure session. The zone bulletin shows the day's moon phase, the four indices (output, pressure, risk, mission failure), and the phase-exclusive actions open that day. Atmosphere and effects inside the zone shift with the phase.
 
-Wilderness actions fall into six classes: probing, sampling, combat, puzzle and container, aerial branch, and ground transport and trade. Probing and aerial branches earn returns only on full and near-full moon days; on other days only on-site records are kept. The other four classes earn returns on every moon phase. Each action immediately credits a small action allowance and, weighted by the day's phase strength and recent heat, converts into an operation score. Containers drop equipment directly; submitting samples to research NPCs advances community research.
+Wilderness actions fall into six classes: probing, sampling, combat, puzzle and container, aerial branch, and ground transport and trade. Probing uses spyglass readings, with compasses and recovery compasses as auxiliary locators; sampling uses brushes, suspicious sand, suspicious gravel, and configured entity drops; aerial branches use harnessed happy ghasts, with rider hits and lead airlifts counted separately. Probing and aerial branches earn returns only on full and near-full moon days; on other days only on-site records are kept. The other four classes earn returns on every moon phase. Each action immediately credits a small action allowance and, weighted by the day's phase strength and recent heat, converts into an operation score. Containers drop equipment directly; submitting samples through librarian or cartographer trades advances community research.
 
 Players choose their own evacuation timing. Carrying samples, leashed cargo, or vehicles back to an evacuation point or a Community zone completes the session; drops and deaths along the way erode sample integrity, and the record locks once the player reaches the endpoint. Death triggers the death insurance, which pays out by policy tier, and unevacuated samples convert into insurance event records by their integrity loss.
 
@@ -121,7 +121,7 @@ Adventure payout carries two anti-manipulation layers: session-level hard rules 
 
 ### Equipment Drops
 
-Equipment drops are computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index, the day's moon-phase `phase_weight`, and the scope×template archetype-match coefficient `af`.
+Equipment drops are computed at the moment a trial vault or configured chest, barrel, or decorated pot opens. The drop probability is jointly driven by the output forecast index, the day's moon-phase `phase_weight`, and the scope×template archetype-match coefficient `af`.
 
 ```
 af       = archetype_match_matrix[tpl.template_archetype][scope.archetype]
@@ -136,7 +136,7 @@ Per-player weekly equipment-output value is capped by `value_per_player_weekly_c
 
 Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in dropped equipment and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
 
-The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that HappyGhast husbandry costs imply.
+The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that happy-ghast husbandry costs imply.
 
 ### Community Research
 
@@ -157,7 +157,7 @@ Each tier carries two coefficients: cost discount `cost_discount` and yield bonu
 | `cost_discount` | 0% | 8% | 16% | 24% | 32% |
 | `yield_bonus` | 0% | 5% | 10% | 15% | 20% |
 
-`cost_discount` applies to probe purchase, sampler purchase, research-center submission fees, share-house rate, insurance premium, and research-center craft recipe materials. `yield_bonus` applies to the adventure payout coefficient, the equipment-drop probability `P_direct` central value, and the sample submission instant allowance. Both coefficients take effect uniformly across all community members.
+`cost_discount` applies to spyglass, compass, recovery compass, brush, research-center submission fees, share-house rate, insurance premium, and research-center craft recipe materials. `yield_bonus` applies to the adventure payout coefficient, the equipment-drop probability `P_direct` central value, and the sample submission instant allowance. Both coefficients take effect uniformly across all community members.
 
 Research carries two feedback cadences. When a player submits a qualified sample, an instant micro-allowance posts immediately: `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`, default `k_bounty = 0.30`. When the community's `research_progress` crosses the next threshold, a one-shot upgrade reward fires at Sunday 18:00: a cash bonus `cash_bonus = α · tier · A_community^β` (default `α = 5000, β = 0.60`) enters the treasury, and an equipment bundle from `loot-windows.json` `tier_unlock_bundle.tier{k}` lands in the community shared storage. When multiple thresholds cross in the same week, each tier settles independently in ascending order.
 
