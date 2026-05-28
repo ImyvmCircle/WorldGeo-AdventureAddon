@@ -1,6 +1,6 @@
 # WorldGeo-AdventureAddon
 
-WorldGeo-AdventureAddon is the wilderness gameplay layer on top of IMYVMWorldGeo and WorldGeo-CommunityAddon. Adventure wires geographic facts, community treasuries, and player field actions into a single input–output loop. Six action classes inside a GeoScope — probing, combat, puzzle, container, transport, trade — generate operation scores; the scores flow into player wallets and community treasuries through seven return channels; communities reinvest the funds into research, shares, insurance, and sponsorship, which feed back into the next week's scope output rhythm and player choices. Wilderness output rhythm follows Minecraft moon-phase days: full and near-full days open the full-weight scoring of probing and aerial transport branches, while other moon-phase days only register field evidence.
+WorldGeo-AdventureAddon is the wilderness gameplay layer on top of IMYVMWorldGeo and WorldGeo-CommunityAddon. Adventure wires geographic facts, community treasuries, and player field actions into a single input–output loop. Six action classes inside a GeoScope — probing, combat, puzzle, container, transport, trade — generate operation scores; operation scores and field outputs enter six player-facing systems: action allowance, adventure payout, equipment drops, community research, index shares, and death insurance. Communities reinvest funds into research, shares, and insurance, feeding back into the next week's regional output rhythm and player choices. Wilderness output rhythm follows Minecraft moon-phase days: full and near-full days open the full-weight scoring of probing and aerial transport branches, while other moon-phase days only register field evidence.
 
 The server time zone is Asia/Shanghai. The weekly settlement triggers at 18:00 on Sunday.
 
@@ -42,7 +42,7 @@ Weekly settlement triggers every Sunday evening. The week's adventure gains are 
 
 ## Mechanics
 
-The mechanics are organized along the six return channels. Each channel specifies its source actor, trigger moment, receiving wallet, computation with caps, and burn rule. The five indices, moon-phase days, weekly settlement, and macro evaluation are listed separately as supporting mechanics.
+The mechanics are organized around six player-facing reward systems. Each system specifies its source actor, trigger moment, receiving wallet, computation with caps, and burn rule. The five indices, moon-phase days, weekly settlement, and macro evaluation are listed separately as supporting mechanics.
 
 ### Five Indices
 
@@ -72,19 +72,19 @@ Wilderness output rhythm follows the day's Minecraft server moon phase 0–7, sw
 
 At moon-phase rollover Adventure calls WorldGeo's timed effect overlay API to switch the scope's effect template. Effect templates translate the horror-tinged mental-anomaly atmosphere into combinations of SLOWNESS, MINING_FATIGUE, NAUSEA, BLINDNESS, DARKNESS, HUNGER, WEAKNESS, POISON, GLOWING and other vanilla effects, switched by the day's moon phase.
 
-### R1 Action Allowance
+### Action Allowance
 
-R1 is an Adventure-system subsidy paid into the player wallet at the moment an action matches an event tuple.
+Action allowance is an Adventure-system subsidy paid into the player wallet at the moment an action matches an event tuple.
 
 ```
-R1(event) = α_R1[class] · baseScore[event.type] · w_class[class] · phase_weight · (1 − heat_penalty)
+ActionAllowance(event) = α_allowance[class] · baseScore[event.type] · w_class[class] · phase_weight · (1 − heat_penalty)
 ```
 
-`α_R1` is configured per action class: P6 logistics-and-trade gets 0.30 for the "small, fast, immediate" flow; P4 puzzle-and-vault gets 0.20 for the high-risk premium; P3 combat and P5 aerial branch get 0.10; P2 sampling gets 0.05; P1 probing gets 0.10. R1 and R2 share the same anti-manipulation filter: when a session triggers a session-level hard rule, R1 is zeroed alongside R2; when a chunk × event type exceeds `heat_threshold_kills_per_minute = 8` within a 5-minute rolling window, `heat_penalty = 1 − 0.5^(excess/threshold)` applies geometric softening. R1 lands in the wallet at the event itself and takes no part in the R2 dual-track realization, the CES weekly conversion, or the burn pipeline.
+`α_allowance` is configured per action class: logistics-and-trade gets 0.30 for the "small, fast, immediate" flow; puzzle-and-vault gets 0.20 for the high-risk premium; combat and aerial branch get 0.10; sampling gets 0.05; probing gets 0.10. Action allowance and adventure payout share the same anti-manipulation filter: when a session triggers a session-level hard rule, the allowance is zeroed alongside the operation score; when a chunk × event type exceeds `heat_threshold_kills_per_minute = 8` within a 5-minute rolling window, `heat_penalty = 1 − 0.5^(excess/threshold)` applies geometric softening. Action allowance lands in the wallet at the event itself and takes no part in the adventure payout's dual-track realization, the CES weekly conversion, or the burn pipeline.
 
-### R2 Operation-Score Conversion
+### Adventure Payout
 
-R2 is the core return channel. Event-level operation scores accumulate by action class:
+Adventure payout is the core reward system. Event-level operation scores accumulate by action class:
 
 ```
 opScore(event)        = baseScore[event.type] · w_class[class] · phase_weight · integrity · (1 − heat_penalty)
@@ -94,7 +94,7 @@ OperationScoreRaw     = Σ_scope PlayerScopeWeekScore
 OperationScore        = min( OperationScoreRaw, Cap_week_player )
 ```
 
-Twelve event types map to six action classes by primary interaction shape: `read` to P1 Probing; `sample_block / sample_entity / brush` to P2 Sampling; `combat` to P3 Combat; `puzzle / vault / chest` to P4 Puzzle-and-Vault; `air_hit / air_haul` to P5 Aerial; `logistics / trade` to P6 Logistics-and-Trade. `baseScore` is configured in `economy.toml [operation_score]` and `w_class` in `[operation_score.class_weight]` (P1=0.6 / P2=0.8 / P3=1.0 / P4=1.2 / P5=1.3 / P6=0.5), routing the high-risk-window premium into P4 and P5.
+Twelve event types map to six action classes by primary interaction shape: `read` to probing; `sample_block / sample_entity / brush` to sampling; `combat` to combat; `puzzle / vault / chest` to puzzle-and-vault; `air_hit / air_haul` to aerial branch; `logistics / trade` to logistics-and-trade. `baseScore` is configured in `economy.toml [operation_score]` and `w_class` in `[operation_score.class_weight]` (probing=0.6 / sampling=0.8 / combat=1.0 / puzzle-and-vault=1.2 / aerial=1.3 / logistics-and-trade=0.5), routing the high-risk-window premium into puzzle-and-vault and aerial branch.
 
 The weekly earning cap uses a CES function.
 
@@ -117,11 +117,11 @@ burn_unredeemed(s)       = pool_residue_at_week_end(s)
 
 Defaults: `immediate_cash_ratio = 0.40`, `base_rate = 0.05 Yuan/score`, `γ_index = 0.40`, `overflow_burn_ratio = 0.50`. The realization rate floats in `0.05–0.07 Yuan/score` with scope production heat. The index realization pool is truncated by the scope weekly cap `ScopeWeeklyCap = α · sqrt(scope_area_chunks) · A_community · (1 + β · ProductionIndex_norm)`, with the excess burned at 50% and any unrealized residue at week-end burned at 100%.
 
-R2 carries two anti-manipulation layers: session-level hard rules and event-level heat softening. Four independent session-level signals — point clustering (≥ 80% of kills inside a 4-block radius cube over a 5-minute window), closed mob farm (movement convex hull / session duration < 30 m²/min), no probe-reading change (P1/P2 reading and sampling index deltas both = 0), and session-long AFK (event density < 0.5 events/minute and session duration ≥ 10 minutes) — zero the entire session's operation score on any hit, fall back to vanilla loot, and bypass the Adventure ledger. Event-level heat softening rolls per chunk × event type and applies geometric decay above the threshold. Point-fixated farming, closed farm structures, and AFK sessions revert to vanilla yields.
+Adventure payout carries two anti-manipulation layers: session-level hard rules and event-level heat softening. Four independent session-level signals — point clustering (≥ 80% of kills inside a 4-block radius cube over a 5-minute window), closed mob farm (movement convex hull / session duration < 30 m²/min), no probe-reading change (probing and sampling index deltas both = 0), and session-long AFK (event density < 0.5 events/minute and session duration ≥ 10 minutes) — zero the entire session's operation score on any hit, fall back to vanilla loot, and bypass the Adventure ledger. Event-level heat softening rolls per chunk × event type and applies geometric decay above the threshold. Point-fixated farming, closed farm structures, and AFK sessions revert to vanilla yields.
 
-### R3 Direct Equipment Drop
+### Equipment Drops
 
-R3 is computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index, the day's moon-phase `phase_weight`, and the scope×template archetype-match coefficient `af`.
+Equipment drops are computed at the moment a trial vault or configured chest opens. The drop probability is jointly driven by the output forecast index, the day's moon-phase `phase_weight`, and the scope×template archetype-match coefficient `af`.
 
 ```
 af       = archetype_match_matrix[tpl.template_archetype][scope.archetype]
@@ -132,15 +132,15 @@ P_direct = clip(p_base + k · ProductionIndex_norm,
 
 Defaults are `p_base = 0.02, k = 0.10, p_min = 0.005, p_max = 0.15`. `af` maps scope archetype (`desert / aquatic / aerial / underground / forest / plains`) against template archetype (`combat / puzzle / vault / aerial / logistics / trade`) into a 0.3–1.5 coefficient: diagonal matches lift the probability (aerial template × aerial scope = 1.5), distant mismatches suppress it (aerial template × desert scope = 0.4), while mismatched scopes still retain a baseline probability rather than dropping to zero. Matrix mean is about 0.85, leaving the global P_direct expectation unchanged. Drop items are configured in the `direct_equipment` section of `loot-windows.json`. Each entry carries `rarity` and `min_norm`; the roll first filters entries by `ProductionIndex_norm ≥ min_norm`, then samples within by `weight`. Low-tier items (`min_norm = 0`) are reachable on all moon-phase days, mid-tier (`min_norm = 0.35`) unlocks from half moon upward, and high-tier (`min_norm = 0.70`) unlocks from near-full moon upward.
 
-Per-player weekly equipment-output value is capped by `value_per_player_weekly_cap`. R3 drops and R4 crafts share the same cap, accumulated through the `item-basket` valuation; when R3 hits the cap the container falls back to vanilla loot, when R4 craft hits the cap the order is rejected. A lucky week with high-value drops automatically tightens the remaining craft budget; a quiet week leaves the craft budget generous, so luck-driven and planning-driven players share one output rhythm.
+Per-player weekly equipment-output value is capped by `value_per_player_weekly_cap`. Equipment drops and research-center crafts share the same cap, accumulated through the `item-basket` valuation; when equipment drops hit the cap the container falls back to vanilla loot, when research-center craft hits the cap the order is rejected. A lucky week with high-value drops automatically tightens the remaining craft budget; a quiet week leaves the craft budget generous, so luck-driven and planning-driven players share one output rhythm.
 
-Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in R3 drops and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
+Multi-material crafting goes through the research center, with recipes in the `craft_recipe` section of `loot-windows.json`. Craft cost is shaped by both research-tier discount and scope drop heat: `craft_cost_eff = recipe.base_materials · (1 - cost_discount[tier]) · (1 + α · scope_direct_value_norm)`, default `α = 0.30`. When a scope's weekly drop value runs hot, same-scope same-archetype craft cost can rise by up to 30%; when drops cool, craft cost falls back to baseline. The research center also operates a disassembly station — players feed in dropped equipment and receive basic / research / advanced materials by rarity (low 0.70, mid 0.60, high 0.50), letting overflowed low-tier stock flow into the research material pool.
 
 The `sky_ghast` template declares independent parameters for the aerial branch, clamping `phase_weight` to a floor of 0.40 so that new-moon-day aerial containers still enjoy a half-moon-equivalent probability window, reflecting the scarcity premium that HappyGhast husbandry costs imply.
 
-### R4 Research Progress
+### Community Research
 
-R4 runs a single-axis accumulator. Community treasury funding (C1 channel) and player sample submission to research NPCs share the same progress counter:
+Community research runs a single-axis accumulator. Community treasury funding and player sample submission to research NPCs share the same progress counter:
 
 ```
 research_progress(c) += funding + sample_value
@@ -157,13 +157,13 @@ Each tier carries two coefficients: cost discount `cost_discount` and yield bonu
 | `cost_discount` | 0% | 8% | 16% | 24% | 32% |
 | `yield_bonus` | 0% | 5% | 10% | 15% | 20% |
 
-`cost_discount` applies to probe purchase, sampler purchase, research-center submission fees, R5 share-house rate, R6 insurance premium, and research-center craft recipe materials. `yield_bonus` applies to the R2 operation-score conversion coefficient, the R3 direct-drop probability `P_direct` central value, and the R4 sample submission instant allowance. Both coefficients take effect uniformly across all community members.
+`cost_discount` applies to probe purchase, sampler purchase, research-center submission fees, share-house rate, insurance premium, and research-center craft recipe materials. `yield_bonus` applies to the adventure payout coefficient, the equipment-drop probability `P_direct` central value, and the sample submission instant allowance. Both coefficients take effect uniformly across all community members.
 
 Research carries two feedback cadences. When a player submits a qualified sample, an instant micro-allowance posts immediately: `bounty = clip(sample_value · k_bounty, 50, 1500) · (1 + yield_bonus[tier])`, default `k_bounty = 0.30`. When the community's `research_progress` crosses the next threshold, a one-shot upgrade reward fires at Sunday 18:00: a cash bonus `cash_bonus = α · tier · A_community^β` (default `α = 5000, β = 0.60`) enters the treasury, and an equipment bundle from `loot-windows.json` `tier_unlock_bundle.tier{k}` lands in the community shared storage. When multiple thresholds cross in the same week, each tier settles independently in ascending order.
 
-### R5 Share Settlement
+### Index Shares
 
-R5 is a community-treasury-to-community-treasury fund channel. Communities subscribe to shares between Monday and Saturday; Sunday 18:00 weekly settlement pays out at the scope's realized end-of-week index value. Once subscribed, a contract is held to settlement — no closing-out or hedging.
+Index shares are a community-treasury-to-community-treasury fund channel. Communities subscribe to shares between Monday and Saturday; Sunday 18:00 weekly settlement pays out at the scope's realized end-of-week index value. Once subscribed, a contract is held to settlement — no closing-out or hedging.
 
 Each contract binds to one index `index_kind ∈ {production, pressure, death_risk, mission_fail}`. A community may run all four index contracts on the same scope simultaneously. The three risk indices (pressure / death_risk / mission_fail) carry higher variance and pay a 0.03 house-fee premium on top of the base (production at 0.05, the others at 0.08).
 
@@ -188,9 +188,9 @@ Default `P_hit_min = 0.05` prevents extreme bands from blowing up the payout rat
 
 Position caps come in three layers: per scope per community (`index_position_per_community_cap`), per community across scopes (`index_position_total_cap`), and scope-wide across all communities (`ScopeTotalPositionCap = base_scope_cap · (1 + β · ProductionIndex_norm)`, default `base_scope_cap = 1500000, β = 0.5`). The first two scale with community development; the third scales with scope output index, preventing a single scope from being mass-bet into an unstable payout. Scopes created mid-week skip that week's share market and join the following week.
 
-### R6 Death Insurance
+### Death Insurance
 
-R6 is sold by Adventure to players, underwritten by the community treasury. Policies cover the value of equipment lost on death and unevacuated exploration samples. Each player is limited to one policy per scope per week; policies remain in force until Sunday 18:00 weekly settlement, expiring without refund if no claim is filed.
+Death insurance is sold by Adventure to players, underwritten by the community treasury. Policies cover the value of equipment lost on death and unevacuated exploration samples. Each player is limited to one policy per scope per week; policies remain in force until Sunday 18:00 weekly settlement, expiring without refund if no claim is filed.
 
 Policies come in three tiers:
 
@@ -222,13 +222,13 @@ Equipment and sample values use the live `item-basket` conversion. Claim denials
 
 Community-treasury underwriting is gated by three caps: per-policy payout ≤ 5000 Yuan; per scope per community cumulative underwriting `≤ base_underwriting_cap · A_community · (1 − δ · PressureIndex_norm)` (base = 200000 Yuan, δ = 0.40); community-wide underwriting `≤ 0.60 · TreasuryBalance`. When the treasury falls below 50000 Yuan, that community suspends new policy sales.
 
-Per-scope weekly cumulative payout circuit-breaker: `ScopePayoutCapWeekly = base_scope_payout_cap · A_community_aggregate · (1 + ε · ProductionIndex_norm)` (base = 80000 Yuan, ε = 0.30). Once the cap is exceeded in a week, remaining claims pay at `prorate_factor`; Sunday 18:00 settlement re-prorates, and any overpayment clawback happens automatically against the affected community treasuries the following week. Circuit-breaker reconciliation runs before R5 share settlement.
+Per-scope weekly cumulative payout circuit-breaker: `ScopePayoutCapWeekly = base_scope_payout_cap · A_community_aggregate · (1 + ε · ProductionIndex_norm)` (base = 80000 Yuan, ε = 0.30). Once the cap is exceeded in a week, remaining claims pay at `prorate_factor`; Sunday 18:00 settlement re-prorates, and any overpayment clawback happens automatically against the affected community treasuries the following week. Circuit-breaker reconciliation runs before index-share settlement.
 
 Premiums credit 100% to the community treasury; the policy fee burns 30%. Death forfeitures burn 70% and credit 30% to the community treasury.
 
 ### Weekly Settlement and Macro Evaluation
 
-Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, R6 insurance circuit-breaker reconciliation with prorate clawback, R5 share market settlement, player and community `Cap_week` computation, macro feedback controller, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
+Sunday 18:00 starts the settlement sequence: session freeze, community development snapshot, scope index final values, death-insurance circuit-breaker reconciliation with prorate clawback, index-share market settlement, player and community `Cap_week` computation, macro feedback controller, operation-score conversion posting, research milestone and insurance renewal processing, weekly log archival, and cycle rollover. Each stage runs in a transaction and rolls back to the stage-start snapshot on failure.
 
 Macro evaluation uses a flow–stock dual-table model plus rolling indicators. The flow table records inflows, burns, and transfers of the week; the stock table records week-end values of player wallet total `M2_player`, community treasury total `M2_community`, and the converted value of in-circulation items `item_stock`. Rolling indicators compute at week-end.
 
@@ -239,7 +239,7 @@ Macro evaluation uses a flow–stock dual-table model plus rolling indicators. T
 
 The CRR target is 0.6. Five alert levels: below 0.4 red community liquidity low, 0.4–0.5 yellow warning, 0.5–0.7 green target band, 0.7–0.85 yellow player-side tightening, above 0.85 red player-side depletion. Alert levels feed the three-layer feedback loop below.
 
-The macro feedback loop runs in three layers. Layer one is formula-level reverse adjustment: PressureIndex, DeathRiskIndex, and CRR appear directly in the in-week R2 / R5 / R6 formulas and take effect at event tick. R2 realization rate multiplies by `(1 − μ_pressure · PressureIndex_norm)`; R5 band width scales by `(1 + ξ_band · |CRR − 0.6|)`; R6 premium scales up under PressureIndex and DeathRiskIndex while underwriting caps tighten by PressureIndex. Defaults are `μ_pressure = 0.30`, `ξ_band = 0.50`, configured in `economy.toml [macro_feedback]`.
+The macro feedback loop runs in three layers. Layer one is formula-level reverse adjustment: PressureIndex, DeathRiskIndex, and CRR appear directly in the in-week adventure payout, index-share, and death-insurance formulas and take effect at event tick. Adventure-payout realization rate multiplies by `(1 − μ_pressure · PressureIndex_norm)`; index-share band width scales by `(1 + ξ_band · |CRR − 0.6|)`; death-insurance premium scales up under PressureIndex and DeathRiskIndex while underwriting caps tighten by PressureIndex. Defaults are `μ_pressure = 0.30`, `ξ_band = 0.50`, configured in `economy.toml [macro_feedback]`.
 
 Layer two is the autopilot cross-week parameter migrator, toggled by `settlement.toml [autopilot]`, defaulting to off. When on, the `compute_macro_feedback` sub-stage at Sunday 18:00 computes global CRR / PressureIndex / DeathRiskIndex errors and adjusts three whitelisted parameters via `Δratio = gain · error`: `realization.base_rate` (CRR feedback), `shares.base_pos_per_scope` (PressureIndex feedback), and `insurance.base_rate` (DeathRiskIndex feedback). A single parameter shifts at most ±2% per week, with hard bounds `[initial · 0.5, initial · 2.0]`; out-of-bound values freeze that parameter and raise a red alert. Every autopilot change writes to `economy_adjust(source="autopilot")` and is rollback-eligible by administrator command within 24 hours. When autopilot is off, the controller still emits a "suggested parameter pack" into the weekly report and `tune_suggestion` table for manual application.
 
