@@ -109,8 +109,10 @@ class GhastListener {
             return
         }
         val actionClass = ActionClass.AERIAL
+        val nowTick = AdventureServices.scheduleService.totalTicks()
+        val heatPenalty = AdventureServices.sessionManager.heatPenalty(player, eventType, nowTick)
         if (AdventureServices.sessionManager.shouldSuppress(
-                player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                player, eventType, location.region.numberID, nowTick
             )
         ) {
             WorldGeoAdventureAddon.logger.debug(
@@ -123,7 +125,6 @@ class GhastListener {
         val baseScore = EconomyConfig.baseScoreFor(eventType)
         val classWeight = EconomyConfig.classWeightFor(actionClass)
         val phaseWeight = MoonPhase.currentWeight()
-        val heatPenalty = HEAT_PENALTY_PLACEHOLDER
         val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
         val allowance = alpha * opScore
         val amount = (allowance * 100.0).toLong()
@@ -135,7 +136,6 @@ class GhastListener {
     }
 
     companion object {
-        private const val HEAT_PENALTY_PLACEHOLDER: Double = 0.0
         private const val HAUL_CHECK_INTERVAL_TICKS: Int = 20
         private const val LEASH_SCAN_RADIUS: Double = 8.0
     }

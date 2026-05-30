@@ -28,8 +28,10 @@ class CombatListener {
 
             val eventType = ActionEventType.COMBAT
             val actionClass = ActionClass.COMBAT
+            val nowTick = AdventureServices.scheduleService.totalTicks()
+            val heatPenalty = AdventureServices.sessionManager.heatPenalty(attacker, eventType, nowTick)
             if (AdventureServices.sessionManager.shouldSuppress(
-                    attacker, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                    attacker, eventType, location.region.numberID, nowTick
                 )
             ) {
                 WorldGeoAdventureAddon.logger.debug(
@@ -42,7 +44,6 @@ class CombatListener {
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)
             val phaseWeight = MoonPhase.currentWeight()
-            val heatPenalty = HEAT_PENALTY_PLACEHOLDER
             val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
             val allowance = alpha * opScore
             val amount = (allowance * 100.0).toLong()
@@ -67,9 +68,5 @@ class CombatListener {
                 deposited
             )
         }
-    }
-
-    companion object {
-        private const val HEAT_PENALTY_PLACEHOLDER: Double = 0.0
     }
 }

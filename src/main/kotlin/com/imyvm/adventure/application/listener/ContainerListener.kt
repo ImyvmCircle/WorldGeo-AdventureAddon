@@ -27,8 +27,10 @@ class ContainerListener {
                 AdventureServices.rareCacheService.activeAt(level, container.blockPos) != null
             val eventType = if (isRareCache) ActionEventType.RARE_CACHE else ActionEventType.CHEST
             val actionClass = ActionClass.CACHE
+            val nowTick = AdventureServices.scheduleService.totalTicks()
+            val heatPenalty = AdventureServices.sessionManager.heatPenalty(player, eventType, nowTick)
             if (AdventureServices.sessionManager.shouldSuppress(
-                    player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                    player, eventType, location.region.numberID, nowTick
                 )
             ) {
                 WorldGeoAdventureAddon.logger.debug(
@@ -41,7 +43,6 @@ class ContainerListener {
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)
             val phaseWeight = MoonPhase.currentWeight()
-            val heatPenalty = HEAT_PENALTY_PLACEHOLDER
             val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
             val allowance = alpha * opScore
             val amount = (allowance * 100.0).toLong()
@@ -68,9 +69,5 @@ class ContainerListener {
                 deposited
             )
         }
-    }
-
-    companion object {
-        private const val HEAT_PENALTY_PLACEHOLDER: Double = 0.0
     }
 }

@@ -5,6 +5,7 @@ import com.imyvm.adventure.infra.config.GameplayConfig
 import net.minecraft.server.level.ServerPlayer
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.floor
 
 class SessionManager {
     private class Activity(
@@ -22,20 +23,43 @@ class SessionManager {
 
     fun shouldSuppress(player: ServerPlayer, eventType: ActionEventType, regionId: Int, tick: Long): Boolean {
         val log = recent.getOrPut(player.uuid) { ArrayDeque() }
-        val windowTicks = GameplayConfig.ANTI_MANIP_CLUSTER_WINDOW_SECONDS.value.coerceAtLeast(1) * 20L
         val current = Activity(eventType, player.x, player.y, player.z, player.yRot, player.xRot, regionId, tick)
 
-        while (log.isNotEmpty() && log.first().tick < tick - windowTicks) log.removeFirst()
+        while (log.isNotEmpty() && log.first().tick < tick - retentionTicks()) log.removeFirst()
         log.addLast(current)
         while (log.size > MAX_TRACKED) log.removeFirst()
 
-        return clusterSuppressed(log, current, windowTicks) || poseSuppressed(log, current)
+        return clusterSuppressed(log, current) || poseSuppressed(log, current)
     }
 
-    private fun clusterSuppressed(log: ArrayDeque<Activity>, current: Activity, windowTicks: Long): Boolean {
+    fun heatPenalty(player: ServerPlayer, eventType: ActionEventType, tick: Long): Double {
+        val log = recent[player.uuid] ?: return 0.0
+        val saturate = GameplayConfig.ANTI_MANIP_HEAT_SATURATE.value
+        if (saturate <= 0) return 0.0
+        val cap = GameplayConfig.ANTI_MANIP_HEAT_CAP.value
+        val windowTicks = GameplayConfig.ANTI_MANIP_HEAT_WINDOW_SECONDS.value.coerceAtLeast(1) * 20L
+        val minTick = tick - windowTicks
+        val cx = floor(player.x).toInt() shr 4
+        val cz = floor(player.z).toInt() shr 4
+        var n = 0
+        for (a in log) {
+            if (a.tick < minTick || a.eventType != eventType) continue
+            if ((floor(a.x).toInt() shr 4) == cx && (floor(a.z).toInt() shr 4) == cz) n++
+        }
+        return minOf(cap, n.toDouble() / saturate)
+    }
+
+    private fun retentionTicks(): Long {
+        val cluster = GameplayConfig.ANTI_MANIP_CLUSTER_WINDOW_SECONDS.value.coerceAtLeast(1)
+        val heat = GameplayConfig.ANTI_MANIP_HEAT_WINDOW_SECONDS.value.coerceAtLeast(1)
+        return maxOf(cluster, heat) * 20L
+    }
+
+    private fun clusterSuppressed(log: ArrayDeque<Activity>, current: Activity): Boolean {
         val radius = GameplayConfig.ANTI_MANIP_CLUSTER_RADIUS_BLOCKS.value.toDouble()
         val threshold = GameplayConfig.ANTI_MANIP_CLUSTER_COUNT.value
         if (threshold <= 0) return false
+        val windowTicks = GameplayConfig.ANTI_MANIP_CLUSTER_WINDOW_SECONDS.value.coerceAtLeast(1) * 20L
         val minTick = current.tick - windowTicks
         var count = 0
         for (a in log) {

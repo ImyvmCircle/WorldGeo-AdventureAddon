@@ -89,5 +89,29 @@ class GameplayConfig : HokiConfig("AdventureGameplay.conf") {
             3.0,
             "maximum yaw and pitch spread in degrees for events to count as a shared pose."
         ) { obj, path -> obj.getDouble(path) }
+
+        @JvmField
+        @ConfigOption
+        val ANTI_MANIP_HEAT_WINDOW_SECONDS = Option(
+            "anti_manipulation.heat.window_seconds",
+            300,
+            "sliding window in seconds for the per-player chunk heat penalty."
+        ) { obj, path -> obj.getInt(path) }
+
+        @JvmField
+        @ConfigOption
+        val ANTI_MANIP_HEAT_SATURATE = Option(
+            "anti_manipulation.heat.saturate_count",
+            10,
+            "same-type events in one chunk within the heat window that reach the heat cap."
+        ) { obj, path -> obj.getInt(path) }
+
+        @JvmField
+        @ConfigOption
+        val ANTI_MANIP_HEAT_CAP = Option(
+            "anti_manipulation.heat.cap",
+            0.8,
+            "maximum heat penalty fraction subtracted from operation score."
+        ) { obj, path -> obj.getDouble(path) }
     }
 }
