@@ -35,6 +35,16 @@ class ProbeUseListener {
 
             val eventType = ActionEventType.READ
             val actionClass = ActionClass.PROBE
+            if (AdventureServices.sessionManager.shouldSuppress(
+                    player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                )
+            ) {
+                WorldGeoAdventureAddon.logger.debug(
+                    "[adventure.probe] player={} suppressed eventType={}",
+                    player.scoreboardName, eventType.configKey
+                )
+                return@register
+            }
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)

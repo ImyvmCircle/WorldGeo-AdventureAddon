@@ -109,6 +109,16 @@ class GhastListener {
             return
         }
         val actionClass = ActionClass.AERIAL
+        if (AdventureServices.sessionManager.shouldSuppress(
+                player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+            )
+        ) {
+            WorldGeoAdventureAddon.logger.debug(
+                "[adventure.aerial] event={} player={} suppressed",
+                eventType.configKey, player.scoreboardName
+            )
+            return
+        }
         val alpha = EconomyConfig.allowanceFractionFor(actionClass)
         val baseScore = EconomyConfig.baseScoreFor(eventType)
         val classWeight = EconomyConfig.classWeightFor(actionClass)

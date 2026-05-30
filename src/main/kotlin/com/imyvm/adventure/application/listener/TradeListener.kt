@@ -24,6 +24,16 @@ class TradeListener {
 
             val eventType = ActionEventType.TRADE
             val actionClass = ActionClass.LOGISTICS_TRADE
+            if (AdventureServices.sessionManager.shouldSuppress(
+                    player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                )
+            ) {
+                WorldGeoAdventureAddon.logger.debug(
+                    "[adventure.trade] player={} suppressed eventType={}",
+                    player.scoreboardName, eventType.configKey
+                )
+                return@register
+            }
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)

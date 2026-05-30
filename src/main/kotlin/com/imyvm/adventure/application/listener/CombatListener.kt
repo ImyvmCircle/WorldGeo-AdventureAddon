@@ -28,6 +28,16 @@ class CombatListener {
 
             val eventType = ActionEventType.COMBAT
             val actionClass = ActionClass.COMBAT
+            if (AdventureServices.sessionManager.shouldSuppress(
+                    attacker, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                )
+            ) {
+                WorldGeoAdventureAddon.logger.debug(
+                    "[adventure.combat] player={} suppressed eventType={}",
+                    attacker.scoreboardName, eventType.configKey
+                )
+                return@register
+            }
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)

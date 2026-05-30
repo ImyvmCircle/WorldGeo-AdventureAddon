@@ -23,6 +23,16 @@ class SampleBlockListener {
 
             val eventType = ActionEventType.BRUSH
             val actionClass = ActionClass.SAMPLE
+            if (AdventureServices.sessionManager.shouldSuppress(
+                    player, eventType, location.region.numberID, AdventureServices.scheduleService.totalTicks()
+                )
+            ) {
+                WorldGeoAdventureAddon.logger.debug(
+                    "[adventure.sample] player={} suppressed eventType={}",
+                    player.scoreboardName, eventType.configKey
+                )
+                return@register
+            }
             val alpha = EconomyConfig.allowanceFractionFor(actionClass)
             val baseScore = EconomyConfig.baseScoreFor(eventType)
             val classWeight = EconomyConfig.classWeightFor(actionClass)

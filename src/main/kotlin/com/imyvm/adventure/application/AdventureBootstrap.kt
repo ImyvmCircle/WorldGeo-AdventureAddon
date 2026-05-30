@@ -6,6 +6,7 @@ import com.imyvm.adventure.application.service.CommunityBridgeService
 import com.imyvm.adventure.application.service.EconomyBridgeService
 import com.imyvm.adventure.application.service.RareCacheService
 import com.imyvm.adventure.application.service.ScopeResolver
+import com.imyvm.adventure.application.service.SessionManager
 import com.imyvm.adventure.application.service.WorldGeoBridgeService
 import com.imyvm.adventure.entrypoint.data.ItemBasketLoader
 import com.imyvm.adventure.entrypoint.data.LootWindowsLoader
@@ -72,6 +73,7 @@ object AdventureBootstrap {
         val economyBridgeService = EconomyBridgeService()
         val scheduleService = AdventureScheduleService()
         val scopeResolver = ScopeResolver(worldGeoBridgeService)
+        val sessionManager = SessionManager()
         val rareCacheService = RareCacheService(scopeResolver)
 
         AdventureServices.bind(
@@ -80,6 +82,7 @@ object AdventureBootstrap {
             economyBridgeService = economyBridgeService,
             scheduleService = scheduleService,
             scopeResolver = scopeResolver,
+            sessionManager = sessionManager,
             rareCacheService = rareCacheService,
             itemBasketLoader = itemBasketLoader,
             lootWindowsLoader = lootWindowsLoader,
