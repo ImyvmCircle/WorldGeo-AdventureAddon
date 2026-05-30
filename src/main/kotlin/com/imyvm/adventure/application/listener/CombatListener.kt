@@ -6,6 +6,7 @@ import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.domain.model.ActionClass
 import com.imyvm.adventure.domain.model.ActionEventType
 import com.imyvm.adventure.infra.config.EconomyConfig
+import com.imyvm.adventure.infra.AdventureDatabase
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
@@ -32,12 +33,16 @@ class CombatListener {
             val classWeight = EconomyConfig.classWeightFor(actionClass)
             val phaseWeight = MoonPhase.currentWeight()
             val heatPenalty = HEAT_PENALTY_PLACEHOLDER
-            val allowance = alpha * baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+            val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+            val allowance = alpha * opScore
             val amount = (allowance * 100.0).toLong()
             val deposited = AdventureServices.economyBridgeService.deposit(attacker, amount)
+            AdventureDatabase.state.addDailyOperationScore(
+                attacker.uuid, actionClass, AdventureServices.scheduleService.today(), opScore
+            )
 
             WorldGeoAdventureAddon.logger.info(
-                "[adventure.combat] player={} region={} victim={} alpha={} base={} cw={} pw={} hp={} allowance={} amount={} deposited={}",
+                "[adventure.combat] player={} region={} victim={} alpha={} base={} cw={} pw={} hp={} op={} allowance={} amount={} deposited={}",
                 attacker.scoreboardName,
                 location.region.name,
                 victim.type.descriptionId,
@@ -46,6 +51,7 @@ class CombatListener {
                 classWeight,
                 phaseWeight,
                 heatPenalty,
+                opScore,
                 allowance,
                 amount,
                 deposited

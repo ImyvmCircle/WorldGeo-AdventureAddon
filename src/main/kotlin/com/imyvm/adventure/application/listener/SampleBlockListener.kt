@@ -7,6 +7,7 @@ import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.domain.model.ActionClass
 import com.imyvm.adventure.domain.model.ActionEventType
 import com.imyvm.adventure.infra.config.EconomyConfig
+import com.imyvm.adventure.infra.AdventureDatabase
 
 class SampleBlockListener {
     fun register() {
@@ -27,12 +28,16 @@ class SampleBlockListener {
             val classWeight = EconomyConfig.classWeightFor(actionClass)
             val phaseWeight = MoonPhase.currentWeight()
             val heatPenalty = HEAT_PENALTY_PLACEHOLDER
-            val allowance = alpha * baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+            val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+            val allowance = alpha * opScore
             val amount = (allowance * 100.0).toLong()
             val deposited = AdventureServices.economyBridgeService.deposit(player, amount)
+            AdventureDatabase.state.addDailyOperationScore(
+                player.uuid, actionClass, AdventureServices.scheduleService.today(), opScore
+            )
 
             WorldGeoAdventureAddon.logger.info(
-                "[adventure.sample] event={} player={} region={} pos={} alpha={} base={} cw={} pw={} hp={} allowance={} amount={} deposited={}",
+                "[adventure.sample] event={} player={} region={} pos={} alpha={} base={} cw={} pw={} hp={} op={} allowance={} amount={} deposited={}",
                 eventType.configKey,
                 player.scoreboardName,
                 location.region.name,
@@ -42,6 +47,7 @@ class SampleBlockListener {
                 classWeight,
                 phaseWeight,
                 heatPenalty,
+                opScore,
                 allowance,
                 amount,
                 deposited

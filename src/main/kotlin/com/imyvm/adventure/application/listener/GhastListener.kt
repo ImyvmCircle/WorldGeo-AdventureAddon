@@ -7,6 +7,7 @@ import com.imyvm.adventure.domain.math.MoonPhase
 import com.imyvm.adventure.domain.model.ActionClass
 import com.imyvm.adventure.domain.model.ActionEventType
 import com.imyvm.adventure.infra.config.EconomyConfig
+import com.imyvm.adventure.infra.AdventureDatabase
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.minecraft.server.level.ServerLevel
@@ -113,10 +114,14 @@ class GhastListener {
         val classWeight = EconomyConfig.classWeightFor(actionClass)
         val phaseWeight = MoonPhase.currentWeight()
         val heatPenalty = HEAT_PENALTY_PLACEHOLDER
-        val allowance = alpha * baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+        val opScore = baseScore * classWeight * phaseWeight * (1.0 - heatPenalty)
+        val allowance = alpha * opScore
         val amount = (allowance * 100.0).toLong()
         val deposited = AdventureServices.economyBridgeService.deposit(player, amount)
-        log("region=${location.region.name} alpha=$alpha base=$baseScore cw=$classWeight pw=$phaseWeight hp=$heatPenalty allowance=$allowance amount=$amount deposited=$deposited")
+        AdventureDatabase.state.addDailyOperationScore(
+            player.uuid, actionClass, AdventureServices.scheduleService.today(), opScore
+        )
+        log("region=${location.region.name} alpha=$alpha base=$baseScore cw=$classWeight pw=$phaseWeight hp=$heatPenalty op=$opScore allowance=$allowance amount=$amount deposited=$deposited")
     }
 
     companion object {
