@@ -48,6 +48,7 @@ replay_*.log
 # agent task archives
 
 agents/prompts/archive/
+agents/local/
 
 # design drafts
 
