@@ -1,16 +1,16 @@
 package com.imyvm.adventure.util.text
 
 import com.imyvm.adventure.WorldGeoAdventureAddon.Companion.MOD_ID
-import com.imyvm.adventure.infra.config.AdventureConfig
+import com.imyvm.adventure.infra.WildernessConfig
 import com.imyvm.hoki.i18n.HokiLanguage
 import com.imyvm.hoki.i18n.HokiTranslator
 import net.minecraft.network.chat.Component
 
 object Translator : HokiTranslator() {
-    private var languageInstance = createLanguage(AdventureConfig.LANGUAGE.value)
+    private var languageInstance = createLanguage(WildernessConfig.LANGUAGE.value)
 
     init {
-        AdventureConfig.LANGUAGE.changeEvents.register { option, _, _ ->
+        WildernessConfig.LANGUAGE.changeEvents.register { option, _, _ ->
             languageInstance = createLanguage(option.value)
         }
     }

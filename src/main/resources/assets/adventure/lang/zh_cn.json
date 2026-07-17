@@ -4,7 +4,18 @@
   "command.about.version": "&7版本：&e{0}",
   "command.about.language": "&7语言：&e{0}",
   "command.about.database": "&7数据库 Schema：&e{0}",
-  "command.about.runtime": "&7运行时设置：时区 &e{0}&7，调度心跳 &e{1} 秒&7，调试日志 &e{2}",
   "command.reload.success": "&aAdventure 配置已重载。",
-  "command.debug.context": "&7运行时已就绪：&a{0}&7，服务器已绑定：&a{1}"
+  "command.wilderness.help": "&7用法：/wilderness create|delete|info|list",
+  "command.wilderness.error.not_ready": "&c野区运行时尚未就绪，请稍后重试。",
+  "command.wilderness.create.success": "&a已创建野区 &e{0} &a，名称：&e{1}&a。",
+  "command.wilderness.create.failure": "&c创建野区 &e{0} &c失败：&7{1}",
+  "command.wilderness.delete.success": "&a已删除野区 &e{0}&a。",
+  "command.wilderness.delete.failure": "&c删除野区 &e{0} &c失败：&7{1}",
+  "command.wilderness.info.not_found": "&c未找到野区 &e{0}&c。",
+  "command.wilderness.info.header": "&6&l野区 &e{0} &6&l· &e{1}",
+  "command.wilderness.info.status": "&7状态：&e{0}",
+  "command.wilderness.info.created": "&7创建时间：&e{0}",
+  "command.wilderness.list.empty": "&7当前没有任何野区。",
+  "command.wilderness.list.header": "&6&l野区列表 &7第 &e{0}&7/&e{1} &7页，共 &e{2} &7个",
+  "command.wilderness.list.entry": "&7· &e{0} &7- &e{1} &7(&e{2}&7)"
 }

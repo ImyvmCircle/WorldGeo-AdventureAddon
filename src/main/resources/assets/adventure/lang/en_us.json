@@ -4,7 +4,18 @@
   "command.about.version": "&7Version: &e{0}",
   "command.about.language": "&7Language: &e{0}",
   "command.about.database": "&7Database schema: &e{0}",
-  "command.about.runtime": "&7Runtime settings: timezone &e{0}&7, scheduler heartbeat &e{1}s&7, debug logging &e{2}",
   "command.reload.success": "&aAdventure configuration reloaded.",
-  "command.debug.context": "&7Runtime ready: &a{0}&7, server bound: &a{1}"
+  "command.wilderness.help": "&7Usage: /wilderness create|delete|info|list",
+  "command.wilderness.error.not_ready": "&cWilderness runtime is not ready yet. Please try again later.",
+  "command.wilderness.create.success": "&aCreated wilderness &e{0}&a, name: &e{1}&a.",
+  "command.wilderness.create.failure": "&cFailed to create wilderness &e{0}&c: &7{1}",
+  "command.wilderness.delete.success": "&aDeleted wilderness &e{0}&a.",
+  "command.wilderness.delete.failure": "&cFailed to delete wilderness &e{0}&c: &7{1}",
+  "command.wilderness.info.not_found": "&cWilderness &e{0}&c not found.",
+  "command.wilderness.info.header": "&6&lWilderness &e{0} &6&l· &e{1}",
+  "command.wilderness.info.status": "&7Status: &e{0}",
+  "command.wilderness.info.created": "&7Created at: &e{0}",
+  "command.wilderness.list.empty": "&7No wildernesses exist yet.",
+  "command.wilderness.list.header": "&6&lWilderness list &7page &e{0}&7/&e{1}, total &e{2}",
+  "command.wilderness.list.entry": "&7· &e{0} &7- &e{1} &7(&e{2}&7)"
 }
