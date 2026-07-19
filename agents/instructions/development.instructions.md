@@ -15,6 +15,7 @@ applyTo: "**"
 
 - `minecraft-i18n.instructions.md`：玩家可见文本、语言文件和 MessageFormat。
 - `configuration-persistence.instructions.md`：配置类、具体数值和数据库维护。
+- `imyvm-mechanism-tech-principles.instructions.md`：IMYVM 机制资源交易与结算技术原则。
 - `commands-suggestions.instructions.md`：命令注册和非 ASCII 名称建议。
 - `documentation-validation.instructions.md`：README、changelog、测试和 IMYVMWorldGeo API。
 - `analysis-iteration.instructions.md`：分析、批判、方向比较和阶段判断的五轮迭代规则。
